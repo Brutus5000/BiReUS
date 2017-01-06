@@ -21,9 +21,9 @@ It aims to support the following use case:
 BiReUS will only create and apply patches for you. It is intended to be run as a shell script or to be embedded inside other applications.
 
 ## Example
-If you want to try it out, you can generate a demo repository using `python3 example/create_demo_repo.py`.
+If you want to try it out, you can generate a demo repository using `python3 example-server/create_demo_repo.py`.
 
-You can now generate the patches using `python3 run-server.py -p example`
+You can now generate the patches using `python3 run-server.py -p example-server`
 
 The example contains all cases at least once (files/folders added, removed, unchanged, changed and zipped).
 

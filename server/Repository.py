@@ -21,11 +21,22 @@ class Repository(object):
         with open(os.path.join(self.Name, '.versions'), 'r+') as file:
             known_versions = file.read().splitlines()
 
+        version_list = get_subdirectories(self._absolutePath)
+
+        version_list.sort()
+        self.logger.info('%s is the latest version', version_list[-1])
+        self.logger.debug('generate latest.zip')
+        shutil.make_archive(os.path.join(self._absolutePath, 'latest'), 'zip',
+                            os.path.join(self._absolutePath, version_list[-1]))
+
+        self.logger.debug('begin patching')
+
         # check for new versions
-        for version_dir in get_subdirectories(self._absolutePath):
+        for version_dir in version_list:
             if version_dir not in known_versions:
                 self.logger.info("new version: %s", version_dir)
                 self.add_version(known_versions, version_dir, forward_only)
+
 
     def add_version(self, existing_versions: List[str], new_version: str, forward_only: bool = False) -> None:
         self.logger.debug("existing versions: %s", existing_versions)

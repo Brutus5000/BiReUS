@@ -6,7 +6,7 @@
 import json
 from typing import List, Dict, Any
 
-from server.DiffItem import DiffItem
+from shared.DiffItem import DiffItem
 
 
 class DiffHead(object):

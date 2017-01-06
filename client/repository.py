@@ -1,0 +1,146 @@
+import json
+import logging
+import tempfile
+import urllib
+import zipfile
+from pathlib import Path
+from urllib.parse import urljoin
+from urllib.request import urlretrieve
+
+from client.patch_task import PatchTask
+from shared.DiffHead import DiffHead
+
+logger = logging.getLogger(__name__)
+
+
+class Repository(object):
+    def __init__(self, absolute_path: Path):
+        if not absolute_path.exists():
+            logger.error("repository path `%s` does not exist", absolute_path)
+            raise Exception("repository path `%s` does not exist", absolute_path)
+
+        info_file = absolute_path / Path('.bireus', 'info.json')
+
+        if not info_file.exists():
+            logger.error("`%s` is not a valid BiReUS client repository", absolute_path)
+            raise Exception("`%s` is not a valid BiReUS client repository", absolute_path)
+
+        logger.debug("Initialize Repository @ %s ", absolute_path)
+
+        with open(str(absolute_path / Path('.bireus', 'info.json')), 'r') as data_file:
+            self._metadata = json.load(data_file)
+
+        self._absolute_path = absolute_path
+        self._internal_path = Path('.bireus')
+
+    @property
+    def name(self) -> str:
+        return self._metadata['name']
+
+    @property
+    def current_version(self) -> str:
+        return self._metadata['current_version']
+
+    @property
+    def latest_version(self) -> str:
+        return self._metadata['latest_version']
+
+    @property
+    def url(self) -> str:
+        return self._metadata['url']
+
+    def latest_from_remote(self) -> str:
+        with urllib.request.urlopen(urljoin(self.url, '/info.json')) as response:
+            repo_info = json.loads(response.read().decode('utf-8'))
+            logger.info('Latest version in remote repository is ´%s´', repo_info['latest_version'])
+            return repo_info['latest_version']
+
+    def checkout_latest(self) -> None:
+        try:
+            version = self.latest_from_remote()
+            self._metadata['latest_version'] = version
+            with open(str(self._absolute_path / self._internal_path / Path('info.json')), 'w') as info_file:
+                json.dump(self._metadata, info_file)
+        except:
+            logger.warning("Remote repository unreachable, use local instead")
+            version = self.latest_version
+        self.checkout_version(self.latest_version)
+
+    def checkout_version(self, version: str) -> None:
+        if self.current_version == version:
+            logger.info("Version `%s` is already checked out", version)
+            return
+
+        logger.info("Checking out version %s", version)
+
+        delta_file = self._absolute_path / self._internal_path / Path(
+            '%s_to_%s.zip' % (self.current_version, version))  # type: Path
+        if not delta_file.exists():
+            logger.info("Download deltafile %s_2_%s from server", self.current_version, version)
+            self._download_delta_to(version)
+        else:
+            logger.info("Deltafile %s_2_%s already on disk", self.current_version, version)
+
+        self._apply_patch(version)
+
+        # set the new version in the info.json
+        self._metadata['current_version'] = version
+        with open(str(self._absolute_path / self._internal_path / Path('info.json')), 'w') as info_file:
+            json.dump(self._metadata, info_file)
+
+        logger.info('Version %s is now checked out', version)
+
+    def _download_delta_to(self, target_version: str) -> None:
+        delta_source = urljoin(self.url, '/%s/.delta_to/%s.zip' % (self.current_version, target_version))
+        delta_dest = self._absolute_path / self._internal_path / Path(
+            '%s_to_%s.zip' % (self.current_version, target_version))
+
+        try:
+            urlretrieve(delta_source, str(delta_dest))
+        except Exception as e:
+            logger.error("Downloading patch-file failed @ %s", delta_source)
+            raise e
+
+    def _apply_patch(self, target_version) -> None:
+        patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + target_version).name)
+        patch_file = self._absolute_path / self._internal_path / Path(
+            '%s_to_%s.zip' % (self.current_version, target_version))
+
+        with zipfile.ZipFile(str(patch_file)) as zip_file:
+            zip_file.extractall(str(patch_dir))
+
+        diff_head = DiffHead.load_json_file(str(patch_dir / Path('.bireus')))
+
+        if len(diff_head.items) == 0 or len(diff_head.items) > 1:
+            logger.error("Invalid diff_head - only top directory allowed")
+            raise Exception("Invalid diff_head - only top directory allowed")
+
+        PatchTask(self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head, diff_head.items[0]).patch()
+
+    @classmethod
+    def get_from_url(cls, path: Path, url: str) -> 'Repository':
+        logger.info("Download repo @ %s to %s", url, str(path))
+
+        if path.exists():
+            logger.exception("Repository already exists (%s)", str(path))
+            raise Exception("Repository already exists (%s)" % str(path))
+
+        path.mkdir(parents=True)
+
+        with urllib.request.urlopen(urljoin(url, '/info.json')) as response:
+            repo_info = json.loads(response.read().decode('utf-8'))
+
+        sub_dir = path / Path('.bireus')
+        sub_dir.mkdir()
+
+        repo_info['current_version'] = repo_info['latest_version']
+
+        with open(str(sub_dir / Path('info.json')), 'w+') as info_file:
+            json.dump(repo_info, info_file)
+
+        filename, headers = urlretrieve(urljoin(url, '/latest.zip'))
+
+        with zipfile.ZipFile(filename) as zip_file:
+            zip_file.extractall(str(path))
+
+        return Repository(path)

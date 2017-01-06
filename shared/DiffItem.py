@@ -2,15 +2,15 @@ from typing import List, Any, Dict
 
 
 class DiffItem(object):
-    def __init__(self, iotype: str, name: str, action: str = '', items: List['DiffItem'] = []):
+    def __init__(self, iotype: str, name: str, base_crc, target_crc, action: str = '', items: List['DiffItem'] = []):
         self._type = iotype
         self._name = name
         self._action = action
         self._items = []
         self._items.extend(items)
 
-        self._base_crc = ''
-        self._target_crc = ''
+        self._base_crc = base_crc
+        self._target_crc = target_crc
 
     @property
     def type(self) -> str:
@@ -67,8 +67,16 @@ class DiffItem(object):
 
     @staticmethod
     def load_dict(data: Dict[str, Any]) -> 'DiffItem':
+        base_crc = ''
+        target_crc = ''
+        if data['type'] == 'file':
+            base_crc = data['base_crc']
+            target_crc = data['target_crc']
+
         result = DiffItem(iotype=data['type'],
                           name=data['name'],
+                          base_crc=base_crc,
+                          target_crc=target_crc,
                           action=data['action'])
 
         for sub_dict in data['items']:

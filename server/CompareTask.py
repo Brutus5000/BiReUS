@@ -5,13 +5,13 @@ import os
 import shutil
 import tempfile
 import zipfile
-import zlib
 
 import bsdiff4
 
 from server import get_subdirectories, get_files
-from server.DiffHead import DiffHead
-from server.DiffItem import DiffItem
+from shared import crc32_from_file
+from shared.DiffHead import DiffHead
+from shared.DiffItem import DiffItem
 
 
 class CompareTask(object):
@@ -39,7 +39,7 @@ class CompareTask(object):
 
         top_folder_diff = self._compare_directory('')
 
-        bireus_head.items.extend(top_folder_diff.items)
+        bireus_head.items.append(top_folder_diff)
 
         if write_deltafile:
             with open(os.path.join(self._deltapath, '.bireus'), 'w+') as diffFile:
@@ -83,7 +83,9 @@ class CompareTask(object):
 
         result_diff = DiffItem(iotype='directory',
                                name=os.path.basename(relative_path),
-                               action=action)  # type: DiffItem
+                               action=action,
+                               base_crc='',
+                               target_crc='')  # type: DiffItem
 
         for dirname in subdirectories:
             result_diff.items.append(self._compare_directory(os.path.join(relative_path, dirname)))
@@ -97,7 +99,9 @@ class CompareTask(object):
         self.logger.debug("_compare_file for `%s` in `%s`", filename, relative_path)
 
         result_diff = DiffItem(iotype='file',
-                               name=filename)  # type: DiffItem
+                               name=filename,
+                               base_crc='',
+                               target_crc='')  # type: DiffItem
 
         basepath = os.path.join(self._basepath, relative_path, filename)
         targetpath = os.path.join(self._targetpath, relative_path, filename)
@@ -106,15 +110,15 @@ class CompareTask(object):
         if not os.path.exists(basepath):
             shutil.copy2(targetpath, deltapath)
             result_diff.action = 'add'
-            result_diff.target_crc = self._crc32_from_file(targetpath)
+            result_diff.target_crc = crc32_from_file(targetpath)
 
         elif not os.path.exists(targetpath):
             result_diff.action = 'remove'
-            result_diff.base_crc = self._crc32_from_file(basepath)
+            result_diff.base_crc = crc32_from_file(basepath)
 
         elif filecmp.cmp(basepath, targetpath):
             result_diff.action = 'unchanged'
-            result_diff.base_crc = result_diff.target_crc = self._crc32_from_file(targetpath)
+            result_diff.base_crc = result_diff.target_crc = crc32_from_file(targetpath)
 
         else:
             if zipfile.is_zipfile(basepath):
@@ -150,8 +154,8 @@ class CompareTask(object):
             else:
                 result_diff.action = 'bsdiff'
                 bsdiff4.file_diff(basepath, targetpath, deltapath)
-                result_diff.target_crc = self._crc32_from_file(targetpath)
-                result_diff.base_crc = self._crc32_from_file(basepath)
+                result_diff.target_crc = crc32_from_file(targetpath)
+                result_diff.base_crc = crc32_from_file(basepath)
 
         return result_diff
 
@@ -163,11 +167,3 @@ class CompareTask(object):
 
         if not os.path.exists(deltapath):
             shutil.copytree(targetpath, deltapath)
-
-    @staticmethod
-    def _crc32_from_file(filepath) -> str:
-        if os.path.getsize(filepath) > 0:
-            with open(filepath, 'rb') as file:
-                return hex(zlib.crc32(file.read()) & 0xffffffff)
-        else:
-            return "#EMPTY"

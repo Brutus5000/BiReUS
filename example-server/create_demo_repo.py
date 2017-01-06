@@ -2,11 +2,13 @@
 
 """
 ** BiReUS demo-repo generator
-This script generates you an example repository with 2 versions.
+This script generates you an example-server repository with 2 versions.
 """
 
 import os
 import shutil
+
+from flask import json
 
 
 def create_simplefile(path: str, name: str, content: str) -> str:
@@ -17,6 +19,9 @@ def create_simplefile(path: str, name: str, content: str) -> str:
         return abs_path
 
 
+if os.path.exists("repo_demo"):
+    shutil.rmtree("repo_demo")
+
 os.mkdir("repo_demo")
 os.mkdir("repo_demo/v1")
 os.mkdir("repo_demo/v2")
@@ -26,21 +31,21 @@ os.mkdir("repo_demo/temp2")
 # create initial version
 create_simplefile("repo_demo", ".versions", "v1")
 
-# example of unchanged-action
+# example-server of unchanged-action
 create_simplefile("repo_demo/v1", "unchanged.txt", "This file will be unchanged.")
 create_simplefile("repo_demo/v2", "unchanged.txt", "This file will be unchanged.")
 
-# example of remove-actions
+# example-server of remove-actions
 create_simplefile("repo_demo/v1", "removed.txt", "This file will be removed in v2.")
 os.mkdir("repo_demo/v1/removed_folder")
 create_simplefile("repo_demo/v1/removed_folder", "obsolete.txt",
                   "This file is obselete, because the folder will be removed in v2.")
 
-# example of add-actions
+# example-server of add-actions
 os.mkdir("repo_demo/v2/new_folder")
 create_simplefile("repo_demo/v2/new_folder", "new_file.txt", "This file will is new in v2.")
 
-# example of change-action
+# example-server of change-action
 create_simplefile("repo_demo/temp1", "zip-content-changed.txt", """Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
 
 Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
@@ -449,3 +454,6 @@ shutil.make_archive("repo_demo/v2/changed", 'zip', "repo_demo/temp2")
 
 shutil.rmtree("repo_demo/temp1")
 shutil.rmtree("repo_demo/temp2")
+
+with open('repo_demo/info.json', 'w+') as info_file:
+    json.dump({"url": "http://www.brutus5000.net", "name": "demo", "latest_version": "v2"}, info_file)
