@@ -3,7 +3,7 @@ import os
 from typing import List
 
 from server import get_subdirectories
-from server.Repository import Repository
+from server.repository import Repository
 
 
 class InvalidRepositoryPathError(Exception):
@@ -18,23 +18,23 @@ class RepositoryManager(object):
             self.logger.fatal('%s is no valid directory', path)
             raise InvalidRepositoryPathError(path)
 
-        self.Path = path  # type: str
-        self.Repositories = []  # type: List[Repository]
-        for repo_dir in get_subdirectories(self.Path):
-            self.Repositories.append(Repository(os.path.join(path, repo_dir), repo_dir))
+        self.path = path  # type: str
+        self.repositories = []  # type: List[Repository]
+        for repo_dir in get_subdirectories(self.path):
+            self.repositories.append(Repository(os.path.join(path, repo_dir), repo_dir))
 
     def full_cleanup(self) -> None:
-        self.logger.info('full_cleanup started for %s', self.Path)
+        self.logger.info('full_cleanup started for %s', self.path)
 
-        for repo in self.Repositories:
+        for repo in self.repositories:
             repo.cleanup()
 
         self.logger.info('full_cleanup finished')
 
     def full_update(self, forward_only: bool = False) -> None:
-        self.logger.info('full_update started for %s', self.Path)
+        self.logger.info('full_update started for %s', self.path)
 
-        for repo in self.Repositories:
+        for repo in self.repositories:
             repo.update(forward_only)
 
         self.logger.info('full_update finished')

@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-from server.RepositoryManager import RepositoryManager
+from server.repository_manager import RepositoryManager
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -16,15 +16,15 @@ formatter = logging.Formatter('%(asctime)s - %(name)-25s - %(levelname)-5s - %(m
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
-ARGS = argparse.ArgumentParser(description="BiReUS (Bidirectional Repository Update Service) - server component")
-ARGS.add_argument('-p', '--path', dest="path", help='file path to the repositories')
-ARGS.add_argument('-c', '--cleanup', dest="cleanup", action="store_true",
-                  help='cleanup and remove all existing patches')
-ARGS.add_argument('-fo', '--forward-only', dest="forward_only", action="store_true",
-                  help='skip creation of backward-patches')
+parser = argparse.ArgumentParser(description="BiReUS (Bidirectional Repository Update Service) - server component")
+parser.add_argument('-p', '--path', dest="path", help='file path to the repositories')
+parser.add_argument('-c', '--cleanup', dest="cleanup", action="store_true",
+                    help='cleanup and remove all existing patches')
+parser.add_argument('-fo', '--forward-only', dest="forward_only", action="store_true",
+                    help='skip creation of backward-patches')
 
 if __name__ == '__main__':
-    args = ARGS.parse_args()
+    args = parser.parse_args()
 
     abspath = os.path.abspath(args.path)
     if os.path.exists(args.path):

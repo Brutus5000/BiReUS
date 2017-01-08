@@ -7,7 +7,7 @@ import zipfile
 import bsdiff4
 import pytest
 
-from server.RepositoryManager import RepositoryManager, InvalidRepositoryPathError
+from server.repository_manager import RepositoryManager, InvalidRepositoryPathError
 from shared.DiffHead import DiffHead
 
 

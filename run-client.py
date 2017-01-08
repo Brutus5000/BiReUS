@@ -64,7 +64,7 @@ class Client(object):
         elif level == 'error':
             return logging.ERROR
         else:  # default
-            raise logging.INFO
+            return logging.INFO
 
 
 if __name__ == '__main__':
