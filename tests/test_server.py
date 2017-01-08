@@ -7,8 +7,8 @@ import zipfile
 import bsdiff4
 import pytest
 
-from server.DiffHead import DiffHead
 from server.RepositoryManager import RepositoryManager, InvalidRepositoryPathError
+from shared.DiffHead import DiffHead
 
 
 def create_simplefile(path: str, name: str, content: str) -> str:
@@ -55,13 +55,17 @@ def test_empty_repo(empty_repo_with_2_version):
         assert json_result['repository'] == "test_repo"
         assert json_result['base_version'] == "v1"
         assert json_result['target_version'] == "v2"
-        assert len(json_result['items']) == 0
+        assert len(json_result['items']) == 1
+        assert json_result['items'][0]['name'] == ''
+        assert json_result['items'][0]['type'] == 'directory'
+        assert json_result['items'][0]['action'] == 'delta'
+        assert len(json_result['items'][0]['items']) == 0
 
     delta = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
     assert delta.repository == "test_repo"
     assert delta.base_version == "v1"
     assert delta.target_version == "v2"
-    assert len(delta.items) == 0
+    assert len(delta.items) == 1
 
 
 def test_folder_removed(empty_repo_with_2_version):
@@ -75,7 +79,7 @@ def test_folder_removed(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "directory"
     assert result.items[0].name == "fr"
@@ -94,7 +98,7 @@ def test_folder_added(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "directory"
     assert result.items[0].name == "fa"
@@ -114,7 +118,7 @@ def test_folder_unchanged(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "directory"
     assert result.items[0].name == "fu"
@@ -134,7 +138,7 @@ def test_subfolder_added(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "directory"
     assert result.items[0].name == "top"
@@ -156,7 +160,7 @@ def test_file_removed(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "file"
     assert result.items[0].name == "test.txt"
@@ -175,7 +179,7 @@ def test_file_added(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "file"
     assert result.items[0].name == "test.txt"
@@ -195,7 +199,7 @@ def test_file_changed(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "file"
     assert result.items[0].name == "test.txt"
@@ -222,7 +226,7 @@ def test_file_unchanged(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "file"
     assert result.items[0].name == "test.txt"
@@ -250,7 +254,7 @@ def test_zipdelta(empty_repo_with_2_version):
     with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
         baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
 
-    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
+    result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
     assert result.items[0].type == "file"
     assert result.items[0].name == "test.zip"
