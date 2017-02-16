@@ -94,5 +94,5 @@ ENV/
 
 # BiReUS specific
 .idea
-example-server/repo_demo/
-example-client/repo_demo/
+tests/example-server/
+tests/example-client/
