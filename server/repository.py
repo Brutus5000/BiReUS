@@ -15,6 +15,10 @@ class Repository(object):
         self._absolute_path = absolute_path
 
     def update(self, forward_only: bool = False) -> None:
+        if not os.path.exists(os.path.join(self._absolute_path, 'info.json')):
+            self.logger.error("Repository %s is missing info.json - skipping repo", self.name)
+            return
+
         self.logger.info('Updating repository %s', self.name)
 
         # load known versions from file

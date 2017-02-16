@@ -30,6 +30,9 @@ def empty_repo_with_2_version(tmpdir):
     versionfile = repo_folder.join(".versions")
     versionfile.write("v1")
 
+    info_json = repo_folder.join("info.json")
+    info_json.write('{"latest_version": "v2", "url": "http://localhost", "name": "empty_repo"}')
+
     return tmpdir, repo_folder, v1_folder, v2_folder
 
 
