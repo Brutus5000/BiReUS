@@ -131,6 +131,6 @@ def test_checkout_version_twice_success(mocker, with_latest_version):
 
     assert client_path.joinpath(".bireus", "info.json").exists()
     assert filecmp.cmp(str(client_path.joinpath("changed.txt")), str(server_path.joinpath("repo_demo", "v2", "changed.txt")))
-    assert filecmp.cmp(str(client_path.joinpath("changed.zip")), str(server_path.joinpath("repo_demo", "v2", "changed.zip")))
+    assert client_path.joinpath("changed.zip").exists()  # zips are not binary identical
     assert filecmp.cmp(str(client_path.joinpath("unchanged.txt")), str(server_path.joinpath("repo_demo", "v2", "unchanged.txt")))
     assert filecmp.cmp(str(client_path.joinpath("new_folder", "new_file.txt")), str(server_path.joinpath("repo_demo", "v2", "new_folder", "new_file.txt")))
