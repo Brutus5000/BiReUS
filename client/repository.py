@@ -5,7 +5,6 @@ import urllib
 import zipfile
 from pathlib import Path
 from urllib.parse import urljoin
-from urllib.request import urlretrieve
 
 from client.patch_task import PatchTask
 from shared.DiffHead import DiffHead
@@ -17,13 +16,13 @@ class Repository(object):
     def __init__(self, absolute_path: Path):
         if not absolute_path.exists():
             logger.error("repository path `%s` does not exist", absolute_path)
-            raise Exception("repository path `%s` does not exist", absolute_path)
+            raise FileNotFoundError("repository path `%s` does not exist", absolute_path)
 
         info_file = absolute_path / Path('.bireus', 'info.json')
 
         if not info_file.exists():
             logger.error("`%s` is not a valid BiReUS client repository", absolute_path)
-            raise Exception("`%s` is not a valid BiReUS client repository", absolute_path)
+            raise ValueError("`%s` is not a valid BiReUS client repository", absolute_path)
 
         logger.debug("Initialize Repository @ %s ", absolute_path)
 
@@ -97,9 +96,9 @@ class Repository(object):
 
         try:
             urlretrieve(delta_source, str(delta_dest))
-        except Exception as e:
+        except Exception:
             logger.error("Downloading patch-file failed @ %s", delta_source)
-            raise e
+            raise
 
     def _apply_patch(self, target_version) -> None:
         patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + target_version).name)
@@ -121,14 +120,18 @@ class Repository(object):
     def get_from_url(cls, path: Path, url: str) -> 'Repository':
         logger.info("Download repo @ %s to %s", url, str(path))
 
-        if path.exists():
-            logger.exception("Repository already exists (%s)", str(path))
-            raise Exception("Repository already exists (%s)" % str(path))
+        try:
+            path.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            logger.error("Repository already exists (%s)", str(path))
+            raise
 
-        path.mkdir(parents=True)
-
-        with urllib.request.urlopen(urljoin(url, '/info.json')) as response:
-            repo_info = json.loads(response.read().decode('utf-8'))
+        try:
+            with urllib.request.urlopen(urljoin(url, '/info.json')) as response:
+                repo_info = json.loads(response.read().decode('utf-8'))
+        except urllib.error.URLError:
+            logger.error("Error while downloading info.json")
+            raise
 
         sub_dir = path / Path('.bireus')
         sub_dir.mkdir()
@@ -138,7 +141,7 @@ class Repository(object):
         with open(str(sub_dir / Path('info.json')), 'w+') as info_file:
             json.dump(repo_info, info_file)
 
-        filename, headers = urlretrieve(urljoin(url, '/latest.zip'))
+        filename, headers = urllib.request.urlretrieve(urljoin(url, '/latest.zip'))
 
         with zipfile.ZipFile(filename) as zip_file:
             zip_file.extractall(str(path))
