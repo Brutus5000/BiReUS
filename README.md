@@ -39,12 +39,19 @@ Arguments:
 * `-c` or `--cleanup` removes all existing patches (but does not reset the .versions file)
 * `-fo` or `--forward-only` skips generation of backward-patches
 
-**Note:** For new repositories you need to create a .version file in the repository folder and add the first folder by hand.
+**Note:** For new repositories you need to create an info.json and a .versions file in the repository folder and add the first folder by hand.
 
 
 ### Client
 
-Not implemented yet.
+The client component manages single repositories. It must be called from inside your desired working directory (either the top directory if you want to create a new one, or the repository itself if you want to checkout a version).
+
+Arguments:
+* `init <path> <url>` downloads the latest repository from an url to path
+* `checkout` switches to the latest version
+* `checkout <version>` switches to a specified version
+
+**Note:** When checking out the latest version, the remote server is asked first. If it is not reachable, the latest local version will be checked out.
 
 
 ## .bireus - Specification
