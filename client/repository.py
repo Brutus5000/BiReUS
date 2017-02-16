@@ -12,13 +12,17 @@ from shared.DiffHead import DiffHead
 logger = logging.getLogger(__name__)
 
 
+class CheckoutError(Exception):
+    pass
+
+
 class Repository(object):
     def __init__(self, absolute_path: Path):
         if not absolute_path.exists():
             logger.error("repository path `%s` does not exist", absolute_path)
             raise FileNotFoundError("repository path `%s` does not exist", absolute_path)
 
-        info_file = absolute_path / Path('.bireus', 'info.json')
+        info_file = absolute_path.joinpath('.bireus', 'info.json')
 
         if not info_file.exists():
             logger.error("`%s` is not a valid BiReUS client repository", absolute_path)
@@ -26,7 +30,7 @@ class Repository(object):
 
         logger.debug("Initialize Repository @ %s ", absolute_path)
 
-        with open(str(absolute_path / Path('.bireus', 'info.json')), 'r') as data_file:
+        with open(str(absolute_path.joinpath('.bireus', 'info.json')), 'r') as data_file:
             self._metadata = json.load(data_file)
 
         self._absolute_path = absolute_path
@@ -70,6 +74,10 @@ class Repository(object):
             logger.info("Version `%s` is already checked out", version)
             return
 
+        if not self._check_version(version):
+            logger.error("Version `%s` is not listed on server", version)
+            raise CheckoutError("Version `%s` is not listed on server", version)
+
         logger.info("Checking out version %s", version)
 
         delta_file = self._absolute_path / self._internal_path / Path(
@@ -89,13 +97,17 @@ class Repository(object):
 
         logger.info('Version %s is now checked out', version)
 
+    def _check_version(self, target_version: str) -> bool:
+        with urllib.request.urlopen(urljoin(self.url, '/.versions')) as response:
+            return target_version in response.read().decode('utf-8')
+
     def _download_delta_to(self, target_version: str) -> None:
         delta_source = urljoin(self.url, '/%s/.delta_to/%s.zip' % (self.current_version, target_version))
         delta_dest = self._absolute_path / self._internal_path / Path(
             '%s_to_%s.zip' % (self.current_version, target_version))
 
         try:
-            urlretrieve(delta_source, str(delta_dest))
+            urllib.request.urlretrieve(delta_source, str(delta_dest))
         except Exception:
             logger.error("Downloading patch-file failed @ %s", delta_source)
             raise
@@ -108,7 +120,7 @@ class Repository(object):
         with zipfile.ZipFile(str(patch_file)) as zip_file:
             zip_file.extractall(str(patch_dir))
 
-        diff_head = DiffHead.load_json_file(str(patch_dir / Path('.bireus')))
+        diff_head = DiffHead.load_json_file(str(patch_dir.joinpath('.bireus')))
 
         if len(diff_head.items) == 0 or len(diff_head.items) > 1:
             logger.error("Invalid diff_head - only top directory allowed")
@@ -133,7 +145,7 @@ class Repository(object):
             logger.error("Error while downloading info.json")
             raise
 
-        sub_dir = path / Path('.bireus')
+        sub_dir = path.joinpath('.bireus')
         sub_dir.mkdir()
 
         repo_info['current_version'] = repo_info['latest_version']

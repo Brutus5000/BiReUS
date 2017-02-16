@@ -39,8 +39,8 @@ class PatchTask(object):
 
     def _patch_file(self) -> None:
         action = self._diff_info.action
-        src_path = self.patch_path / Path(self._diff_info.name)
-        dest_path = self.repo_path / Path(self._diff_info.name)
+        src_path = self.patch_path.joinpath(self._diff_info.name)
+        dest_path = self.repo_path.joinpath(self._diff_info.name)
         logger.debug('Patching file -> action=%s,  file=%s', action, self._diff_info.name)
 
         if action == 'add':
@@ -86,8 +86,8 @@ class PatchTask(object):
 
     def _patch_directory(self) -> None:
         action = self._diff_info.action
-        repo_folder = self.repo_path / Path(self._diff_info.name)
-        patch_folder = self.patch_path / Path(self._diff_info.name)
+        repo_folder = self.repo_path.joinpath(self._diff_info.name)
+        patch_folder = self.patch_path.joinpath(self._diff_info.name)
         logger.debug('Patching directory -> action=%s,  folder=%s', action, self._diff_info.name)
 
         if action == 'add':
@@ -95,7 +95,7 @@ class PatchTask(object):
                 remove_folder(repo_folder)
             copy_folder(patch_folder, repo_folder)
         elif action == 'remove':
-            remove_folder(self.repo_path / Path(self._diff_info.name))
+            remove_folder(self.repo_path.joinpath(self._diff_info.name))
         elif action == 'delta':
             for diff_item in self._diff_info.items:
                 if diff_item.type == 'file':
