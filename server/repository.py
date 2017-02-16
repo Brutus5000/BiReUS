@@ -18,7 +18,7 @@ class Repository(object):
         self.logger.info('Updating repository %s', self.name)
 
         # load known versions from file
-        with open(os.path.join(self.name, '.versions'), 'r+') as file:
+        with open(os.path.join(self._absolute_path, '.versions'), 'r+') as file:
             known_versions = file.read().splitlines()
 
         version_list = get_subdirectories(self._absolute_path)
@@ -41,7 +41,7 @@ class Repository(object):
     def add_version(self, existing_versions: List[str], new_version: str, forward_only: bool = False) -> None:
         self.logger.debug("existing versions: %s", existing_versions)
 
-        with open(os.path.join(self.name, '.versions'), 'a') as version_file:
+        with open(os.path.join(self._absolute_path, '.versions'), 'a') as version_file:
             for old_version in existing_versions:
                 self.logger.debug('Generating diffs %s -> %s', old_version, new_version)
                 CompareTask(self.name, old_version, new_version).generate_diff()
