@@ -48,7 +48,7 @@ def test_empty_repo(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -79,7 +79,7 @@ def test_folder_removed(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -99,7 +99,7 @@ def test_folder_added(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -120,7 +120,7 @@ def test_folder_unchanged(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -141,7 +141,7 @@ def test_subfolder_added(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -164,7 +164,7 @@ def test_file_removed(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -184,7 +184,7 @@ def test_file_added(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -205,7 +205,7 @@ def test_file_changed(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -233,7 +233,7 @@ def test_file_unchanged(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -262,7 +262,7 @@ def test_zipdelta(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    filename = os.path.join(repo_folder.strpath, '__patches__', 'v1_to_v2.tar.xz')
     targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
     shutil.unpack_archive(filename, targetfolder, 'xztar')
 
@@ -276,14 +276,21 @@ def test_zipdelta(empty_repo_with_2_version):
 
 def test_cleanup(empty_repo_with_2_version):
     tmpdir, repo_folder, v1_folder, v2_folder = empty_repo_with_2_version
-    delta_folder1 = v1_folder.mkdir(".delta_to").strpath
 
-    assert os.path.exists(delta_folder1)
+    os.mkdir(os.path.join(repo_folder.strpath, "__patches__"))
+
+    open(os.path.join(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz"), 'a').close()
+    open(os.path.join(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz"), 'a').close()
+
+
+    assert os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz"))
+    assert os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz"))
 
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_cleanup()
 
-    assert not os.path.exists(delta_folder1)
+    assert not os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz"))
+    assert not os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz"))
 
 
 def test_forward_only(empty_repo_with_2_version):
@@ -294,8 +301,8 @@ def test_forward_only(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update(forward_only=True)
 
-    assert os.path.exists(os.path.join(v1_folder.strpath, ".delta_to"))
-    assert not os.path.exists(os.path.join(v2_folder.strpath, ".delta_to"))
+    assert os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz"))
+    assert not os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz"))
 
 
 def test_forward_only_negative(empty_repo_with_2_version):
@@ -306,5 +313,5 @@ def test_forward_only_negative(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update(forward_only=False)
 
-    assert os.path.exists(os.path.join(v1_folder.strpath, ".delta_to"))
-    assert os.path.exists(os.path.join(v2_folder.strpath, ".delta_to"))
+    assert os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz"))
+    assert os.path.exists(os.path.join(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz"))

@@ -29,7 +29,7 @@ class Repository(object):
 
         version_list.sort()
         self.logger.info('%s is the latest version', version_list[-1])
-        self.logger.debug('generate latest.tar.xz')
+        self.logger.debug('generate latest.xztar')
         shutil.make_archive(os.path.join(self._absolute_path, 'latest'), 'xztar',
                             os.path.join(self._absolute_path, version_list[-1]))
 
@@ -61,8 +61,5 @@ class Repository(object):
             existing_versions.append(new_version)
 
     def cleanup(self) -> None:
-        for version_dir in get_subdirectories(self.name):
-            remove_path = os.path.join(self._absolute_path, version_dir, '.delta_to')
-            if os.path.exists(remove_path):
-                self.logger.debug('Cleanup %s', remove_path)
-                shutil.rmtree(remove_path)
+        self.logger.debug('Cleanup %s', self.name)
+        shutil.rmtree(os.path.join(self._absolute_path, "__patches__"))

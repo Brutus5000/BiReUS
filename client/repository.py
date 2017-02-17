@@ -102,7 +102,7 @@ class Repository(object):
             return target_version in response.read().decode('utf-8')
 
     def _download_delta_to(self, target_version: str) -> None:
-        delta_source = urljoin(self.url, '/%s/.delta_to/%s.tar.xz' % (self.current_version, target_version))
+        delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (self.current_version, target_version))
         delta_dest = self._absolute_path / self._internal_path / Path(
             '%s_to_%s.tar.xz' % (self.current_version, target_version))
 

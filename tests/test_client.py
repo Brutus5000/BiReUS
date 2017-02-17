@@ -81,7 +81,7 @@ def test_get_from_url_success(with_latest_version):
 def test_checkout_version_success(mocker, with_latest_version):
     global client_repo
 
-    server_update_zip = str(server_path.joinpath("repo_demo", "v2", ".delta_to", "v1.tar.xz"))
+    server_update_zip = str(server_path.joinpath("repo_demo", "__patches__", "v2_to_v1.tar.xz"))
 
     mock_urlretrieve = mocker.patch("urllib.request.urlretrieve")
     mock_urlretrieve.return_value = ["", dict()]
@@ -98,7 +98,7 @@ def test_checkout_version_success(mocker, with_latest_version):
 def test_checkout_version_unknown(mocker, with_latest_version):
     global client_repo
 
-    server_update_zip = str(server_path.joinpath("repo_demo", "v2", ".delta_to", "v1.tar.xz"))
+    server_update_zip = str(server_path.joinpath("repo_demo", "__patches__", "v2_to_v1.tar.xz"))
 
     mock_urlretrieve = mocker.patch("urllib.request.urlretrieve")
     mock_urlretrieve.return_value = ["", dict()]
@@ -111,7 +111,7 @@ def test_checkout_version_unknown(mocker, with_latest_version):
 def test_checkout_version_twice_success(mocker, with_latest_version):
     global client_repo
 
-    server_update_zip = str(server_path.joinpath("repo_demo", "v2", ".delta_to", "v1.tar.xz"))
+    server_update_zip = str(server_path.joinpath("repo_demo", "__patches__", "v2_to_v1.tar.xz"))
 
     mock_urlretrieve = mocker.patch("urllib.request.urlretrieve")
     mock_urlretrieve.return_value = ["", dict()]
@@ -122,7 +122,7 @@ def test_checkout_version_twice_success(mocker, with_latest_version):
     mock_urlopen.return_value.__enter__.side_effect = [MockResponse.from_file(server_path.joinpath("repo_demo", "info.json")),
                                                        MockResponse.from_file(server_path.joinpath("repo_demo", ".versions"))]
 
-    server_update_zip = str(server_path.joinpath("repo_demo", "v1", ".delta_to", "v2.tar.xz"))
+    server_update_zip = str(server_path.joinpath("repo_demo", "__patches__", "v1_to_v2.tar.xz"))
 
     mock_urlretrieve = mocker.patch("urllib.request.urlretrieve")
     mock_urlretrieve.return_value = ["", dict()]
