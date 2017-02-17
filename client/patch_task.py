@@ -99,10 +99,10 @@ class PatchTask(object):
         elif action == 'delta':
             for diff_item in self._diff_info.items:
                 if diff_item.type == 'file':
-                    PatchTask(self._url, self._repo_base_path, self._relative_path, self.patch_path, self._patch_info,
+                    PatchTask(self._url, self._repo_base_path, self._relative_path.joinpath(self._diff_info.name), self.patch_path, self._patch_info,
                               diff_item).patch()
                 elif diff_item.type == 'directory':
-                    PatchTask(self._url, self._repo_base_path, self._relative_path, self.patch_path, self._patch_info,
+                    PatchTask(self._url, self._repo_base_path, self._relative_path.joinpath(self._diff_info.name), self.patch_path, self._patch_info,
                               diff_item).patch()
 
     def _patch_zipdelta(self) -> None:
