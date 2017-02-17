@@ -20,8 +20,8 @@ class Client(object):
 
         The most commonly used commands are:
            init <path> <url>    Download the latest repository from an url to path
-           checkout             Switch to latest version
-           checkout <version>   Switch to a specified version
+           checkout [-p <path>] Switch to latest version
+           checkout <version> [-p <path>] Switch to a specified version
         ''')
 
         parser.add_argument("--debug", "-d", default='info', choices=['debug', 'info', 'warning', 'error'])

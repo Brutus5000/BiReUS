@@ -1,8 +1,8 @@
 import json
 import logging
+import shutil
 import tempfile
 import urllib
-import zipfile
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -81,7 +81,7 @@ class Repository(object):
         logger.info("Checking out version %s", version)
 
         delta_file = self._absolute_path / self._internal_path / Path(
-            '%s_to_%s.zip' % (self.current_version, version))  # type: Path
+            '%s_to_%s.tar.xz' % (self.current_version, version))  # type: Path
         if not delta_file.exists():
             logger.info("Download deltafile %s_2_%s from server", self.current_version, version)
             self._download_delta_to(version)
@@ -102,9 +102,9 @@ class Repository(object):
             return target_version in response.read().decode('utf-8')
 
     def _download_delta_to(self, target_version: str) -> None:
-        delta_source = urljoin(self.url, '/%s/.delta_to/%s.zip' % (self.current_version, target_version))
+        delta_source = urljoin(self.url, '/%s/.delta_to/%s.tar.xz' % (self.current_version, target_version))
         delta_dest = self._absolute_path / self._internal_path / Path(
-            '%s_to_%s.zip' % (self.current_version, target_version))
+            '%s_to_%s.tar.xz' % (self.current_version, target_version))
 
         try:
             urllib.request.urlretrieve(delta_source, str(delta_dest))
@@ -115,10 +115,9 @@ class Repository(object):
     def _apply_patch(self, target_version) -> None:
         patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + target_version).name)
         patch_file = self._absolute_path / self._internal_path / Path(
-            '%s_to_%s.zip' % (self.current_version, target_version))
+            '%s_to_%s.tar.xz' % (self.current_version, target_version))
 
-        with zipfile.ZipFile(str(patch_file)) as zip_file:
-            zip_file.extractall(str(patch_dir))
+        shutil.unpack_archive(str(patch_file),str(patch_dir), 'xztar')
 
         diff_head = DiffHead.load_json_file(str(patch_dir.joinpath('.bireus')))
 
@@ -153,9 +152,8 @@ class Repository(object):
         with open(str(sub_dir / Path('info.json')), 'w+') as info_file:
             json.dump(repo_info, info_file)
 
-        filename, headers = urllib.request.urlretrieve(urljoin(url, '/latest.zip'))
+        filename, headers = urllib.request.urlretrieve(urljoin(url, '/latest.tar.xz'))
 
-        with zipfile.ZipFile(filename) as zip_file:
-            zip_file.extractall(str(path))
+        shutil.unpack_archive(filename, str(path), 'xztar')
 
         return Repository(path)

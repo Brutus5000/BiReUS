@@ -46,7 +46,7 @@ class CompareTask(object):
                 json.dump(bireus_head.to_dict(), diffFile)
 
             abs_delta_path = os.path.join(os.getcwd(), self._deltapath)
-            shutil.make_archive(abs_delta_path, 'zip', abs_delta_path)  # .zip gets added to filename automatically
+            shutil.make_archive(abs_delta_path, 'xztar', abs_delta_path)  # file extension gets added to filename automatically
             shutil.rmtree(abs_delta_path)  # remove the delta folder, only the zipfile remains
 
         return bireus_head

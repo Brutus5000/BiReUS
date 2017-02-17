@@ -29,8 +29,8 @@ class Repository(object):
 
         version_list.sort()
         self.logger.info('%s is the latest version', version_list[-1])
-        self.logger.debug('generate latest.zip')
-        shutil.make_archive(os.path.join(self._absolute_path, 'latest'), 'zip',
+        self.logger.debug('generate latest.tar.xz')
+        shutil.make_archive(os.path.join(self._absolute_path, 'latest'), 'xztar',
                             os.path.join(self._absolute_path, version_list[-1]))
 
         self.logger.debug('begin patching')

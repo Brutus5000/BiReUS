@@ -2,7 +2,6 @@ import filecmp
 import json
 import os
 import shutil
-import zipfile
 
 import bsdiff4
 import pytest
@@ -49,8 +48,9 @@ def test_empty_repo(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     assert os.path.exists(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))  # delta file written
     with open(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')) as json_file:
@@ -79,8 +79,9 @@ def test_folder_removed(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -98,8 +99,9 @@ def test_folder_added(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -118,8 +120,9 @@ def test_folder_unchanged(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -138,8 +141,9 @@ def test_subfolder_added(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -160,8 +164,9 @@ def test_file_removed(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -179,8 +184,9 @@ def test_file_added(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -199,8 +205,9 @@ def test_file_changed(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -226,8 +233,9 @@ def test_file_unchanged(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
@@ -254,8 +262,9 @@ def test_zipdelta(empty_repo_with_2_version):
     repo_manager = RepositoryManager(tmpdir.strpath)
     repo_manager.full_update()
 
-    with zipfile.ZipFile(os.path.join(v1_folder.strpath, '.delta_to', 'v2.zip')) as baseZip:
-        baseZip.extractall(os.path.join(v1_folder.strpath, '.delta_to', 'v2'))
+    filename = os.path.join(v1_folder.strpath, '.delta_to', 'v2.tar.xz')
+    targetfolder = os.path.join(v1_folder.strpath, '.delta_to', 'v2')
+    shutil.unpack_archive(filename, targetfolder, 'xztar')
 
     result = DiffHead.load_json_file(os.path.join(v1_folder.strpath, '.delta_to', 'v2', '.bireus')).items[0]
     assert len(result.items) == 1
