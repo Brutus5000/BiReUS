@@ -1,12 +1,11 @@
 import json
 import logging
-import shutil
 import tempfile
 import urllib
-from pathlib import Path
 from urllib.parse import urljoin
 
 from client.patch_task import PatchTask
+from shared import *
 from shared.DiffHead import DiffHead
 
 logger = logging.getLogger(__name__)
@@ -117,9 +116,9 @@ class Repository(object):
         patch_file = self._absolute_path / self._internal_path / Path(
             '%s_to_%s.tar.xz' % (self.current_version, target_version))
 
-        shutil.unpack_archive(str(patch_file),str(patch_dir), 'xztar')
+        unpack_archive(patch_file, patch_dir, 'xztar')
 
-        diff_head = DiffHead.load_json_file(str(patch_dir.joinpath('.bireus')))
+        diff_head = DiffHead.load_json_file(patch_dir.joinpath('.bireus'))
 
         if len(diff_head.items) == 0 or len(diff_head.items) > 1:
             logger.error("Invalid diff_head - only top directory allowed")

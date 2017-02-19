@@ -1,9 +1,5 @@
-# bireus_descriptor = {'repository': self.Repository.Name,
-#                    'base_version': self.Base,
-#                    'target_version': self.Target,
-#                    'delta_path': os.path.join(self.Repository.Name, self.Base, '.delta_to', self.Target),
-#                    'items': []}
 import json
+from pathlib import Path
 from typing import List, Dict, Any
 
 from shared.DiffItem import DiffItem
@@ -58,6 +54,6 @@ class DiffHead(object):
         return result
 
     @staticmethod
-    def load_json_file(filepath: str) -> 'DiffHead':
-        with open(filepath, 'r') as file:
+    def load_json_file(filepath: Path) -> 'DiffHead':
+        with filepath.open(mode='r') as file:
             return DiffHead.load_dict(json.load(file))
