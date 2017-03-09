@@ -4,6 +4,7 @@ import tempfile
 import urllib
 from urllib.parse import urljoin
 
+from client.download_service import AbstractDownloadService, BasicDownloadService
 from client.patch_task import PatchTask
 from shared import *
 from shared.DiffHead import DiffHead
@@ -16,7 +17,12 @@ class CheckoutError(Exception):
 
 
 class Repository(object):
-    def __init__(self, absolute_path: Path):
+    def __init__(self, absolute_path: Path, download_service: AbstractDownloadService = None):
+        if download_service is None:
+            self._download_service = BasicDownloadService()
+        else:
+            self._download_service = download_service
+
         if not absolute_path.exists():
             logger.error("repository path `%s` does not exist", absolute_path)
             raise FileNotFoundError("repository path `%s` does not exist", absolute_path)
@@ -127,7 +133,7 @@ class Repository(object):
             logger.error("Invalid diff_head - only top directory allowed")
             raise Exception("Invalid diff_head - only top directory allowed")
 
-        PatchTask(self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head, diff_head.items[0]).patch()
+        PatchTask(self._download_service, self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head, diff_head.items[0]).patch()
 
     @classmethod
     def get_from_url(cls, path: Path, url: str) -> 'Repository':
