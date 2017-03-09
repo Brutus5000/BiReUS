@@ -6,6 +6,7 @@ from urllib.request import urlretrieve
 
 import bsdiff4
 
+from client import ZipdeltaCrcMismatchError
 from shared import *
 from shared.DiffHead import DiffHead
 from shared.DiffItem import DiffItem
@@ -15,13 +16,14 @@ logger = logging.getLogger(__name__)
 
 class PatchTask(object):
     def __init__(self, repository_url: str, repo_base_path: Path, relative_path: Path, patch_path: Path,
-                 patch_info: DiffHead, diff_info: DiffItem):
+                 patch_info: DiffHead, diff_info: DiffItem, is_zipdelta: bool = False):
         self._url = repository_url
         self._repo_base_path = repo_base_path
         self._relative_path = relative_path
         self._patch_info = patch_info
         self._patch_path = patch_path
         self._diff_info = diff_info
+        self._is_zipdelta = is_zipdelta
 
     def patch(self) -> None:
         if self._diff_info.type == 'file':
@@ -99,10 +101,12 @@ class PatchTask(object):
         elif action == 'delta':
             for diff_item in self._diff_info.items:
                 if diff_item.type == 'file':
-                    PatchTask(self._url, self._repo_base_path, self._relative_path.joinpath(self._diff_info.name), self.patch_path, self._patch_info,
+                    PatchTask(self._url, self._repo_base_path, self._relative_path.joinpath(self._diff_info.name),
+                              self.patch_path, self._patch_info,
                               diff_item).patch()
                 elif diff_item.type == 'directory':
-                    PatchTask(self._url, self._repo_base_path, self._relative_path.joinpath(self._diff_info.name), self.patch_path, self._patch_info,
+                    PatchTask(self._url, self._repo_base_path, self._relative_path.joinpath(self._diff_info.name),
+                              self.patch_path, self._patch_info,
                               diff_item).patch()
 
     def _patch_zipdelta(self) -> None:
@@ -122,8 +126,8 @@ class PatchTask(object):
                 PatchTask(self._url, zip_repo_path, self._relative_path, self.patch_path, self._patch_info,
                           diff_item).patch()
             elif diff_item.type == 'directory':
-                PatchTask(self._url, zip_repo_path, self._relative_path, self.patch_path / Path(self._diff_info.name),
-                          self._patch_info, diff_item).patch()
+                PatchTask(self._url, zip_repo_path, self._relative_path,
+                          self.patch_path / Path(self._diff_info.name), self._patch_info, diff_item).patch()
 
         # zip the patched content and replace original zipfile
         repo_zip_file.unlink()
