@@ -27,6 +27,7 @@ class Client(object):
         parser.add_argument("--debug", "-d", default='info', choices=['debug', 'info', 'warning', 'error'])
 
         subparsers = parser.add_subparsers(dest='command')
+        subparsers.required = True
 
         parser_init = subparsers.add_parser("init")
         parser_init.add_argument("path")

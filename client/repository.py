@@ -97,8 +97,11 @@ class Repository(object):
         logger.info('Version %s is now checked out', version)
 
     def _check_version(self, target_version: str) -> bool:
-        with urllib.request.urlopen(urljoin(self.url, '/.versions')) as response:
-            return target_version in response.read().decode('utf-8')
+        try:
+            with urllib.request.urlopen(urljoin(self.url, '/.versions')) as response:
+                return target_version in response.read().decode('utf-8')
+        except:
+            return False
 
     def _download_delta_to(self, target_version: str) -> None:
         delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (self.current_version, target_version))
