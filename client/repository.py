@@ -1,13 +1,10 @@
 import json
 import logging
 import tempfile
-import urllib
 from urllib.parse import urljoin
-from urllib.error import URLError
-from urllib.request import urlopen
 
 
-from client.download_service import AbstractDownloadService, BasicDownloadService
+from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
 from client.patch_task import PatchTask
 from shared import *
 from shared.DiffHead import DiffHead
@@ -60,13 +57,13 @@ class Repository(object):
     def url(self) -> str:
         return self._metadata['url']
 
-    def latest_from_remote(self) -> str:
-        with urllib.request.urlopen(urljoin(self.url, '/info.json')) as response:
-            repo_info = json.loads(response.read().decode('utf-8'))
-            logger.info('Latest version in remote repository is ´%s´', repo_info['latest_version'])
-            return repo_info['latest_version']
+    async def latest_from_remote(self) -> str:
+        content = await self._download_service.read(urljoin(self.url, '/info.json'))
+        repo_info = json.loads(content.decode('utf-8'))
+        logger.info('Latest version in remote repository is ´%s´', repo_info['latest_version'])
+        return repo_info['latest_version']
 
-    def checkout_latest(self) -> None:
+    async def checkout_latest(self) -> None:
         try:
             version = self.latest_from_remote()
             self._metadata['latest_version'] = version
@@ -82,7 +79,7 @@ class Repository(object):
             logger.info("Version `%s` is already checked out", version)
             return
 
-        if not self._check_version(version):
+        if not await self._check_version(version):
             logger.error("Version `%s` is not listed on server", version)
             raise CheckoutError("Version `%s` is not listed on server", version)
 
@@ -105,11 +102,11 @@ class Repository(object):
 
         logger.info('Version %s is now checked out', version)
 
-    def _check_version(self, target_version: str) -> bool:
+    async def _check_version(self, target_version: str) -> bool:
         try:
-            with urllib.request.urlopen(urljoin(self.url, '/.versions')) as response:
-                return target_version in response.read().decode('utf-8')
-        except:
+            content = await self._download_service.read(urljoin(self.url, '/.versions'))
+            return target_version in content.decode('utf-8')
+        except DownloadError:
             return False
 
     async def _download_delta_to(self, target_version: str) -> None:
@@ -151,9 +148,9 @@ class Repository(object):
             raise
 
         try:
-            with urllib.request.urlopen(urljoin(url, '/info.json')) as response:
-                repo_info = json.loads(response.read().decode('utf-8'))
-        except urllib.error.URLError:
+            content = await download_service.read(urljoin(url, '/info.json'))
+            repo_info = json.loads(content.decode('utf-8'))
+        except DownloadError:
             logger.error("Error while downloading info.json")
             raise
 
