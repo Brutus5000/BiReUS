@@ -2,11 +2,9 @@ import logging
 import tempfile
 import zipfile
 from urllib.parse import urljoin
-from urllib.request import urlretrieve
 
 import bsdiff4
 
-from client import ZipdeltaCrcMismatchError
 from client.download_service import AbstractDownloadService
 from shared import *
 from shared.DiffHead import DiffHead
@@ -28,11 +26,11 @@ class PatchTask(object):
         self._diff_info = diff_info
         self._is_zipdelta = is_zipdelta
 
-    def patch(self) -> None:
+    async def patch(self) -> None:
         if self._diff_info.type == 'file':
-            self._patch_file()
+            await self._patch_file()
         elif self._diff_info.type == 'directory':
-            self._patch_directory()
+            await self._patch_directory()
 
     @property
     def repo_path(self) -> Path:
@@ -42,7 +40,7 @@ class PatchTask(object):
     def patch_path(self) -> Path:
         return self._patch_path / self._relative_path
 
-    def _patch_file(self) -> None:
+    async def _patch_file(self) -> None:
         action = self._diff_info.action
         src_path = self.patch_path.joinpath(self._diff_info.name)
         dest_path = self.repo_path.joinpath(self._diff_info.name)
@@ -72,7 +70,7 @@ class PatchTask(object):
                 delta_source = delta_source + '/' + self._diff_info.name
                 delta_dest = self._repo_base_path / self._relative_path / self._diff_info.name
 
-                urlretrieve(delta_source, str(delta_dest))
+                await self._download_service.download(delta_source, delta_dest)
 
         elif action == 'remove':
             dest_path.unlink()
@@ -80,7 +78,7 @@ class PatchTask(object):
         elif action == 'unchanged':
             return
         elif action == 'zipdelta':
-            self._patch_zipdelta()
+            await self._patch_zipdelta()
             return
 
         if self._diff_info.target_crc == crc32_from_file(dest_path):
@@ -89,7 +87,7 @@ class PatchTask(object):
             logger.error('CRC32 mismatch')
             raise Exception('CRC32 mismatch (%s)', dest_path)
 
-    def _patch_directory(self) -> None:
+    async def _patch_directory(self) -> None:
         action = self._diff_info.action
         repo_folder = self.repo_path.joinpath(self._diff_info.name)
         patch_folder = self.patch_path.joinpath(self._diff_info.name)
@@ -104,15 +102,15 @@ class PatchTask(object):
         elif action == 'delta':
             for diff_item in self._diff_info.items:
                 if diff_item.type == 'file':
-                    PatchTask(self._download_service, self._url, self._repo_base_path,
-                              self._relative_path.joinpath(self._diff_info.name),
-                              self.patch_path, self._patch_info, diff_item).patch()
+                    await PatchTask(self._download_service, self._url, self._repo_base_path,
+                                    self._relative_path.joinpath(self._diff_info.name),
+                                    self.patch_path, self._patch_info, diff_item).patch()
                 elif diff_item.type == 'directory':
-                    PatchTask(self._download_service, self._url, self._repo_base_path,
-                              self._relative_path.joinpath(self._diff_info.name),
-                              self.patch_path, self._patch_info, diff_item).patch()
+                    await PatchTask(self._download_service, self._url, self._repo_base_path,
+                                    self._relative_path.joinpath(self._diff_info.name),
+                                    self.patch_path, self._patch_info, diff_item).patch()
 
-    def _patch_zipdelta(self) -> None:
+    async def _patch_zipdelta(self) -> None:
         # unpack the zip file in the current repo to temporary folder
         repo_zip_file = Path(self._repo_base_path / self._relative_path / Path(self._diff_info.name))
 
@@ -126,11 +124,11 @@ class PatchTask(object):
         # patch the zip-contents from current repo (in temporary folder)
         for diff_item in self._diff_info.items:
             if diff_item.type == 'file':
-                PatchTask(self._download_service, self._url, zip_repo_path, self._relative_path, self.patch_path,
-                          self._patch_info, diff_item).patch()
+                await PatchTask(self._download_service, self._url, zip_repo_path, self._relative_path, self.patch_path,
+                                self._patch_info, diff_item).patch()
             elif diff_item.type == 'directory':
-                PatchTask(self._download_service, self._url, zip_repo_path, self._relative_path,
-                          self.patch_path / Path(self._diff_info.name), self._patch_info, diff_item).patch()
+                await PatchTask(self._download_service, self._url, zip_repo_path, self._relative_path,
+                                self.patch_path / Path(self._diff_info.name), self._patch_info, diff_item).patch()
 
         # zip the patched content and replace original zipfile
         repo_zip_file.unlink()

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Bidirectional Repository Update Service - client component"""
+import asyncio
 import argparse
 import logging
 import os
@@ -45,15 +46,19 @@ class Client(object):
         streamhandler.setFormatter(formatter)
         root.addHandler(streamhandler)
 
+        loop = asyncio.get_event_loop()
+
         if args.command == 'init':
-            Repository.get_from_url(Path(args.path), args.url)
+            loop.run_until_complete(Repository.get_from_url(Path(args.path), args.url))
         elif args.command == 'checkout':
             repo = Repository(Path(args.path))
 
             if args.version == 'latest':
-                repo.checkout_latest()
+                loop.run_until_complete(repo.checkout_latest())
             else:
-                repo.checkout_version(args.version)
+                loop.run_until_complete(repo.checkout_version(args.version))
+
+        loop.close()
 
     def get_loglevel(self, level: str) -> int:
         if level == 'debug':

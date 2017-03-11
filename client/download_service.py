@@ -1,5 +1,6 @@
 import logging
 import abc
+import atexit
 from pathlib import Path
 from typing import Union
 
@@ -17,6 +18,7 @@ class AbstractDownloadService(abc.ABC):
 class BasicDownloadService(AbstractDownloadService):
     def __init__(self):
         self._session = aiohttp.ClientSession()
+        atexit.register(self._session.close)
 
     async def download(self, url: str, path: Path) -> None:
         chunk_size = 1024

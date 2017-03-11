@@ -3,6 +3,9 @@ import logging
 import tempfile
 import urllib
 from urllib.parse import urljoin
+from urllib.error import URLError
+from urllib.request import urlopen
+
 
 from client.download_service import AbstractDownloadService, BasicDownloadService
 from client.patch_task import PatchTask
@@ -74,7 +77,7 @@ class Repository(object):
             version = self.latest_version
         self.checkout_version(self.latest_version)
 
-    def checkout_version(self, version: str) -> None:
+    async def checkout_version(self, version: str) -> None:
         if self.current_version == version:
             logger.info("Version `%s` is already checked out", version)
             return
@@ -89,11 +92,11 @@ class Repository(object):
             '%s_to_%s.tar.xz' % (self.current_version, version))  # type: Path
         if not delta_file.exists():
             logger.info("Download deltafile %s_2_%s from server", self.current_version, version)
-            self._download_delta_to(version)
+            await self._download_delta_to(version)
         else:
             logger.info("Deltafile %s_2_%s already on disk", self.current_version, version)
 
-        self._apply_patch(version)
+        await self._apply_patch(version)
 
         # set the new version in the info.json
         self._metadata['current_version'] = version
@@ -109,18 +112,18 @@ class Repository(object):
         except:
             return False
 
-    def _download_delta_to(self, target_version: str) -> None:
+    async def _download_delta_to(self, target_version: str) -> None:
         delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (self.current_version, target_version))
         delta_dest = self._absolute_path / self._internal_path / Path(
             '%s_to_%s.tar.xz' % (self.current_version, target_version))
 
         try:
-            urllib.request.urlretrieve(delta_source, str(delta_dest))
+            await self._download_service.download(delta_source, delta_dest)
         except Exception:
             logger.error("Downloading patch-file failed @ %s", delta_source)
             raise
 
-    def _apply_patch(self, target_version) -> None:
+    async def _apply_patch(self, target_version) -> None:
         patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + target_version).name)
         patch_file = self._absolute_path / self._internal_path / Path(
             '%s_to_%s.tar.xz' % (self.current_version, target_version))
@@ -133,11 +136,13 @@ class Repository(object):
             logger.error("Invalid diff_head - only top directory allowed")
             raise Exception("Invalid diff_head - only top directory allowed")
 
-        PatchTask(self._download_service, self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head, diff_head.items[0]).patch()
+        await PatchTask(self._download_service, self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head, diff_head.items[0]).patch()
 
     @classmethod
-    def get_from_url(cls, path: Path, url: str) -> 'Repository':
-        logger.info("Download repo @ %s to %s", url, str(path))
+    async def get_from_url(cls, path: Path, url: str, download_service: AbstractDownloadService = None) -> 'Repository':
+        if download_service is None:
+            logger.debug("Using BasicDownloadService")
+            download_service = BasicDownloadService()
 
         try:
             path.mkdir(parents=True, exist_ok=False)
@@ -160,8 +165,11 @@ class Repository(object):
         with open(str(sub_dir / Path('info.json')), 'w+') as info_file:
             json.dump(repo_info, info_file)
 
-        filename, headers = urllib.request.urlretrieve(urljoin(url, '/latest.tar.xz'))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            tmpfilepath = tmppath.joinpath("latest.tar.xz")
+            await download_service.download(urljoin(url, '/latest.tar.xz'), tmpfilepath)
+            unpack_archive(tmpfilepath, path, 'xztar')
+            logger.info("Downloaded and unpacked latest.tar.xz")
 
-        shutil.unpack_archive(filename, str(path), 'xztar')
-
-        return Repository(path)
+        return Repository(path, download_service)
