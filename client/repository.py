@@ -35,7 +35,7 @@ class Repository(object):
 
         logger.debug("Initialize Repository @ %s ", absolute_path)
 
-        with open(str(absolute_path.joinpath('.bireus', 'info.json')), 'r') as data_file:
+        with absolute_path.joinpath('.bireus', 'info.json').open("r") as data_file:
             self._metadata = json.load(data_file)
 
         self._absolute_path = absolute_path
@@ -65,14 +65,15 @@ class Repository(object):
 
     async def checkout_latest(self) -> None:
         try:
-            version = self.latest_from_remote()
+            version = await self.latest_from_remote()
             self._metadata['latest_version'] = version
             with open(str(self._absolute_path / self._internal_path / Path('info.json')), 'w') as info_file:
                 json.dump(self._metadata, info_file)
         except:
             logger.warning("Remote repository unreachable, use local instead")
             version = self.latest_version
-        self.checkout_version(self.latest_version)
+
+        await self.checkout_version(self.latest_version)
 
     async def checkout_version(self, version: str) -> None:
         if self.current_version == version:

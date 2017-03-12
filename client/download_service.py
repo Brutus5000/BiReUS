@@ -26,14 +26,20 @@ class AbstractDownloadService(abc.ABC):
 
 class BasicDownloadService(AbstractDownloadService):
     def __init__(self):
-        self._session = aiohttp.ClientSession()
-        atexit.register(self._session.close)
+        self._session = None
+
+    async def get_session(self):
+        if self._session is None:
+            self._session = aiohttp.ClientSession()
+            atexit.register(self._session.close)
+        return self._session
 
     async def download(self, url: str, path: Path) -> None:
         chunk_size = 1024
 
         try:
-            async with self._session.get(url) as response:
+            session = await self.get_session()
+            async with session.get(url) as response:
                 with path.open(mode="wb") as file:
                     while True:
                         chunk = await response.content.read(chunk_size)
@@ -45,7 +51,8 @@ class BasicDownloadService(AbstractDownloadService):
 
     async def read(self, url: str) -> bytes:
         try:
-            async with self._session.get(url) as response:
+            session = await self.get_session()
+            async with session.get(url) as response:
                 return await response.read()
         except Exception as e:
             raise DownloadError(e, url)

@@ -1,2 +1,0 @@
-class ZipdeltaCrcMismatchError(Exception):
-    pass

@@ -125,3 +125,29 @@ async def test_checkout_version_twice_success(mocker, prepare_server):
                          server_path.joinpath("repo_demo", "v2", "unchanged.txt"))
     assert compare_files(client_path.joinpath("new_folder", "new_file.txt"),
                          server_path.joinpath("repo_demo", "v2", "new_folder", "new_file.txt"))
+
+
+
+@pytest.mark.asyncio
+async def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_server):
+    downloader = MockDownloadService()
+    client_repo = await get_latest_version(mocker, downloader)
+
+    with client_path.joinpath("changed.txt").open("wb") as file:
+        file.write("test".encode("utf-8"))
+
+    server_update = server_path.joinpath("repo_demo", "__patches__", "v2_to_v1.tar.xz")
+    downloader.add_download_action(lambda path_from, path_to: copy_file(server_update, path_to))
+
+    server_single_file = server_path.joinpath("repo_demo", "v1", "changed.txt")
+    downloader.add_download_action(lambda path_from, path_to: copy_file(server_single_file, path_to))
+
+    await client_repo.checkout_version("v1")
+
+    assert compare_files(client_path.joinpath("changed.txt"), server_path.joinpath("repo_demo", "v1", "changed.txt"))
+    assert client_path.joinpath("changed.zip").exists()  # zips are not binary identical
+    assert compare_files(client_path.joinpath("removed.txt"), server_path.joinpath("repo_demo", "v1", "removed.txt"))
+    assert compare_files(client_path.joinpath("unchanged.txt"),
+                         server_path.joinpath("repo_demo", "v1", "unchanged.txt"))
+    assert compare_files(client_path.joinpath("removed_folder", "obsolete.txt"),
+                         server_path.joinpath("repo_demo", "v1", "removed_folder", "obsolete.txt"))

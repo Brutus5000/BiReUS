@@ -13,6 +13,14 @@ from shared.DiffItem import DiffItem
 logger = logging.getLogger(__name__)
 
 
+class CrcMismatchError(Exception):
+    def __init__(self, file: Path, expectedCrc: str, actuaclCrc: str):
+        super(CrcMismatchError, self).__init__(self, 'File %s with wrong CRC code (expected=%s, actual=%s)' % (str(file), expectedCrc, actuaclCrc))
+        self.file = file
+        self.expectedCrc = expectedCrc
+        self.actualCrc = actuaclCrc
+
+
 class PatchTask(object):
     def __init__(self, download_service: AbstractDownloadService, repository_url: str, repo_base_path: Path,
                  relative_path: Path, patch_path: Path,
@@ -28,9 +36,27 @@ class PatchTask(object):
 
     async def patch(self) -> None:
         if self._diff_info.type == 'file':
-            await self._patch_file()
+            try:
+                await self._patch_file()
+            except CrcMismatchError:
+                if self._is_zipdelta:
+                    logger.warning("CRC32-mismatch in ZipFile - raise upwards")
+                    raise
+                else:
+                    logger.warning("CRC32-mismatch - downloading whole file instead")
+                    await self._fallback_download()
         elif self._diff_info.type == 'directory':
             await self._patch_directory()
+
+    async def _fallback_download(self):
+        delta_source = urljoin(self._url, self._patch_info.target_version)
+        if str(self._relative_path) != '.':
+            delta_source = delta_source + '/' + str(self._relative_path)
+        delta_source = delta_source + '/' + self._diff_info.name
+        delta_dest = self._repo_base_path / self._relative_path / self._diff_info.name
+        if delta_dest.exists():
+            delta_dest.unlink()
+        await self._download_service.download(delta_source, delta_dest)
 
     @property
     def repo_path(self) -> Path:
@@ -53,7 +79,8 @@ class PatchTask(object):
 
             copy_file(src_path, self.repo_path)
         elif action == 'bsdiff':
-            if self._diff_info.base_crc == crc32_from_file(dest_path):
+            target_crc_before_patch = crc32_from_file(dest_path)
+            if self._diff_info.base_crc == target_crc_before_patch:
                 logger.debug('Patching %s', dest_path)
 
                 # using bsdiff4.file_patch_inplace not possible due to
@@ -62,15 +89,7 @@ class PatchTask(object):
                 dest_path.unlink()
                 move_file(str(dest_path) + ".patched", dest_path)
             else:
-                logger.warning('CRC32-mismatch - downloading file instead')
-
-                delta_source = urljoin(self._url, self._patch_info.target_version)
-                if str(self._relative_path) != '.':
-                    delta_source = delta_source + '/' + str(self._relative_path)
-                delta_source = delta_source + '/' + self._diff_info.name
-                delta_dest = self._repo_base_path / self._relative_path / self._diff_info.name
-
-                await self._download_service.download(delta_source, delta_dest)
+                raise CrcMismatchError(dest_path, str(self._diff_info.base_crc), str(target_crc_before_patch))
 
         elif action == 'remove':
             dest_path.unlink()
@@ -81,11 +100,11 @@ class PatchTask(object):
             await self._patch_zipdelta()
             return
 
-        if self._diff_info.target_crc == crc32_from_file(dest_path):
+        target_crc_after_patch = crc32_from_file(dest_path)
+        if self._diff_info.target_crc == target_crc_after_patch:
             logger.debug('CRC32 ok')
         else:
-            logger.error('CRC32 mismatch')
-            raise Exception('CRC32 mismatch (%s)', dest_path)
+            raise CrcMismatchError(dest_path, self._diff_info.target_crc)
 
     async def _patch_directory(self) -> None:
         action = self._diff_info.action
@@ -104,11 +123,11 @@ class PatchTask(object):
                 if diff_item.type == 'file':
                     await PatchTask(self._download_service, self._url, self._repo_base_path,
                                     self._relative_path.joinpath(self._diff_info.name),
-                                    self.patch_path, self._patch_info, diff_item).patch()
+                                    self.patch_path, self._patch_info, diff_item, self._is_zipdelta).patch()
                 elif diff_item.type == 'directory':
                     await PatchTask(self._download_service, self._url, self._repo_base_path,
                                     self._relative_path.joinpath(self._diff_info.name),
-                                    self.patch_path, self._patch_info, diff_item).patch()
+                                    self.patch_path, self._patch_info, diff_item, self._is_zipdelta).patch()
 
     async def _patch_zipdelta(self) -> None:
         # unpack the zip file in the current repo to temporary folder
@@ -125,10 +144,10 @@ class PatchTask(object):
         for diff_item in self._diff_info.items:
             if diff_item.type == 'file':
                 await PatchTask(self._download_service, self._url, zip_repo_path, self._relative_path, self.patch_path,
-                                self._patch_info, diff_item).patch()
+                                self._patch_info, diff_item, True).patch()
             elif diff_item.type == 'directory':
                 await PatchTask(self._download_service, self._url, zip_repo_path, self._relative_path,
-                                self.patch_path / Path(self._diff_info.name), self._patch_info, diff_item).patch()
+                                self.patch_path / Path(self._diff_info.name), self._patch_info, diff_item, True).patch()
 
         # zip the patched content and replace original zipfile
         repo_zip_file.unlink()
