@@ -456,8 +456,17 @@ def create_test_server_data(path: Path):
     shutil.rmtree(str(repo_path.joinpath("temp2")))
 
     with open(str(repo_path.joinpath("info.json")), 'w+') as info_file:
-        json.dump({"url": "http://www.brutus5000.net", "name": "demo", "latest_version": "v2"}, info_file)
-
+        json.dump(
+            {
+                "url": "http://www.brutus5000.net",
+                "config": {
+                    "name": "test_repo",
+                    "latest_version": "v2"
+                },
+                "versions": ["v1"]
+            },
+            info_file
+        )
 
 if __name__ == '__main__':
     create_test_server_data(Path.cwd().joinpath("example-server"))

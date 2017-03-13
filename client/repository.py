@@ -51,7 +51,7 @@ class Repository(object):
 
     @property
     def latest_version(self) -> str:
-        return self._metadata['latest_version']
+        return self._metadata['config']['latest_version']
 
     @property
     def url(self) -> str:
@@ -61,7 +61,7 @@ class Repository(object):
         content = await self._download_service.read(urljoin(self.url, '/info.json'))
         repo_info = json.loads(content.decode('utf-8'))
         logger.info('Latest version in remote repository is ´%s´', repo_info['latest_version'])
-        return repo_info['latest_version']
+        return repo_info['config']['latest_version']
 
     async def checkout_latest(self) -> None:
         try:
@@ -158,7 +158,7 @@ class Repository(object):
         sub_dir = path.joinpath('.bireus')
         sub_dir.mkdir()
 
-        repo_info['current_version'] = repo_info['latest_version']
+        repo_info['current_version'] = repo_info['config']['latest_version']
 
         with open(str(sub_dir / Path('info.json')), 'w+') as info_file:
             json.dump(repo_info, info_file)

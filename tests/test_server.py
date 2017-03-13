@@ -26,9 +26,45 @@ def empty_repo_with_2_version(tmpdir):
     versionfile.write("v1")
 
     info_json = repo_folder.join("info.json")
-    info_json.write('{"latest_version": "v2", "url": "http://localhost", "name": "empty_repo"}')
+    with info_json.open("w") as file:
+        json.dump(
+            {
+                "config": {
+                    "name": "test_repo",
+                    "latest_version": "v1"
+                },
+                "versions": ["v1"]
+            },
+            file
+        )
 
     return tmpdir, repo_folder, v1_folder, v2_folder
+
+
+def test_load_empty_repo(tmpdir):
+    main_path = Path(tmpdir.strpath)
+    repo_path = main_path.joinpath("test_repo")
+    repo_path.mkdir()
+
+    repo_path.joinpath("v1").mkdir()
+    info_json = repo_path.joinpath("info.json")
+
+    with info_json.open("w") as file:
+        json.dump(
+            {
+                "config": {
+                    "name": "test_repo",
+                    "latest_version": "v1"
+                },
+                "versions": ["v1"]
+            },
+            file
+        )
+
+    repo_manager = RepositoryManager(main_path)
+    assert repo_manager.repositories[0].name == "test_repo"
+    assert repo_manager.repositories[0].latest_version == "v1"
+    assert repo_manager.repositories[0].versions[0] == "v1"
 
 
 def test_invalid_repo_folder(tmpdir):

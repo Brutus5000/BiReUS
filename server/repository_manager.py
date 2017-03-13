@@ -5,6 +5,8 @@ from server import get_subdirectory_names
 from server.repository import Repository
 from shared import *
 
+logger = logging.getLogger(__name__)
+
 
 class InvalidRepositoryPathError(Exception):
     pass
@@ -12,10 +14,8 @@ class InvalidRepositoryPathError(Exception):
 
 class RepositoryManager(object):
     def __init__(self, path: Path):
-        self.logger = logging.getLogger('server.RepositoryManager')
-
         if not path.is_dir():
-            self.logger.fatal('%s is no valid directory', str(path))
+            logger.fatal('%s is no valid directory', str(path))
             raise InvalidRepositoryPathError(path)
 
         change_dir(path)
@@ -26,17 +26,31 @@ class RepositoryManager(object):
             self.repositories.append(Repository(path.joinpath(repo_dir), repo_dir))
 
     def full_cleanup(self) -> None:
-        self.logger.info('full_cleanup started for %s', str(self.path))
+        logger.info('full_cleanup started for %s', str(self.path))
 
         for repo in self.repositories:
             repo.cleanup()
 
-        self.logger.info('full_cleanup finished')
+        logger.info('full_cleanup finished')
 
     def full_update(self, forward_only: bool = False) -> None:
-        self.logger.info('full_update started for %s', str(self.path))
+        logger.info('full_update started for %s', str(self.path))
 
         for repo in self.repositories:
             repo.update(forward_only)
 
-        self.logger.info('full_update finished')
+        logger.info('full_update finished')
+
+    def create(self, name: str, first_version: str = "1.0.0", mode="bi") -> Repository:
+        """
+        Creates a new repository
+        :param name: name of repository
+        :param first_version: name of the first version
+        :param mode: 'bi' for bidirectional patching, 'fo' for forward only patching
+        :return: represantation of the new repository
+        """
+
+        logger.info('create repository %s with version %s (mode=%s)' % (name, first_version, mode))
+        repository = Repository.create(self.path.joinpath(name), name, first_version, mode)
+        self.repositories.append(repository)
+        return repository
