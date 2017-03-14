@@ -22,9 +22,6 @@ def empty_repo_with_2_version(tmpdir):
     v1_folder = repo_folder.mkdir("v1")
     v2_folder = repo_folder.mkdir("v2")
 
-    versionfile = repo_folder.join(".versions")
-    versionfile.write("v1")
-
     info_json = repo_folder.join("info.json")
     with info_json.open("w") as file:
         json.dump(

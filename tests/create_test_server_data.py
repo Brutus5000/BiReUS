@@ -28,9 +28,6 @@ def create_test_server_data(path: Path):
     repo_path.joinpath("temp1").mkdir()
     repo_path.joinpath("temp2").mkdir()
 
-    # create initial version
-    create_simplefile(repo_path, ".versions", "v1")
-
     # example-server of unchanged-action
     create_simplefile(repo_path.joinpath("v1"), "unchanged.txt", "This file will be unchanged.")
     create_simplefile(repo_path.joinpath("v2"), "unchanged.txt", "This file will be unchanged.")
@@ -458,7 +455,6 @@ def create_test_server_data(path: Path):
     with open(str(repo_path.joinpath("info.json")), 'w+') as info_file:
         json.dump(
             {
-                "url": "http://www.brutus5000.net",
                 "config": {
                     "name": "test_repo",
                     "latest_version": "v2"

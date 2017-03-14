@@ -1,6 +1,7 @@
 import json
 import logging
 import tempfile
+from typing import List
 from urllib.parse import urljoin
 
 
@@ -47,7 +48,7 @@ class Repository(object):
 
     @property
     def current_version(self) -> str:
-        return self._metadata['current_version']
+        return self._metadata ['config']['current_version']
 
     @property
     def latest_version(self) -> str:
@@ -55,7 +56,11 @@ class Repository(object):
 
     @property
     def url(self) -> str:
-        return self._metadata['url']
+        return self._metadata['config']['url']
+
+    @property
+    def versions(self) -> List[str]:
+        return self._metadata['versions']
 
     async def latest_from_remote(self) -> str:
         content = await self._download_service.read(urljoin(self.url, '/info.json'))
@@ -80,7 +85,7 @@ class Repository(object):
             logger.info("Version `%s` is already checked out", version)
             return
 
-        if not await self._check_version(version):
+        if not await self._check_version_exists(version):
             logger.error("Version `%s` is not listed on server", version)
             raise CheckoutError("Version `%s` is not listed on server", version)
 
@@ -97,18 +102,22 @@ class Repository(object):
         await self._apply_patch(version)
 
         # set the new version in the info.json
-        self._metadata['current_version'] = version
+        self._metadata['config']['current_version'] = version
         with open(str(self._absolute_path / self._internal_path / Path('info.json')), 'w') as info_file:
             json.dump(self._metadata, info_file)
 
         logger.info('Version %s is now checked out', version)
 
-    async def _check_version(self, target_version: str) -> bool:
-        try:
-            content = await self._download_service.read(urljoin(self.url, '/.versions'))
-            return target_version in content.decode('utf-8')
-        except DownloadError:
-            return False
+    async def _check_version_exists(self, target_version: str) -> bool:
+        if target_version in self.versions:
+            return True
+        else:
+            try:
+                content = await self._download_service.read(urljoin(self.url, '/info.json'))
+                self._metadata = json.loads(content.decode('utf-8'))
+                return target_version in self.versions
+            except DownloadError:
+                return False
 
     async def _download_delta_to(self, target_version: str) -> None:
         delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (self.current_version, target_version))
@@ -158,7 +167,8 @@ class Repository(object):
         sub_dir = path.joinpath('.bireus')
         sub_dir.mkdir()
 
-        repo_info['current_version'] = repo_info['config']['latest_version']
+        repo_info['config']['url'] = url
+        repo_info['config']['current_version'] = repo_info['config']['latest_version']
 
         with open(str(sub_dir / Path('info.json')), 'w+') as info_file:
             json.dump(repo_info, info_file)

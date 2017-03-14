@@ -36,10 +36,10 @@ The server component scans all repositories in the given path and will generate 
 Arguments:
 
 * `-p <repository-path>` sets the repository path, _mandatory_
-* `-c` or `--cleanup` removes all existing patches (but does not reset the .versions file)
+* `-c` or `--cleanup` removes all existing patches
 * `-fo` or `--forward-only` skips generation of backward-patches
 
-**Note:** For new repositories you need to create an info.json and a .versions file in the repository folder and add the first folder by hand.
+**Note:** For new repositories you need to create an info.json in the repository folder and add the first folder by hand.
 
 
 ### Client

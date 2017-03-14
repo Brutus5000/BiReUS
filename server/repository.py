@@ -27,10 +27,6 @@ class Repository(object):
 
         logger.info('Updating repository %s', self.name)
 
-        # load known versions from file
-        with self._absolute_path.joinpath('.versions').open(mode='r+') as file:
-            known_versions = file.read().splitlines()
-
         version_list = get_subdirectory_names(self._absolute_path)
 
         version_list.sort()
@@ -43,35 +39,49 @@ class Repository(object):
 
         # check for new versions
         for version_dir in version_list:
-            if version_dir not in known_versions:
+            if version_dir not in self.versions:
                 logger.info("new version: %s", version_dir)
-                self.add_version(known_versions, version_dir, forward_only)
+                self.add_version(version_dir, forward_only)
 
-    def add_version(self, existing_versions: List[str], new_version: str, forward_only: bool = False) -> None:
-        logger.debug("existing versions: %s", existing_versions)
+    def add_version(self, new_version: str, forward_only: bool = False) -> None:
+        logger.debug("existing versions: %s", self.versions)
 
-        with self._absolute_path.joinpath('.versions').open(mode='a') as version_file:
-            for old_version in existing_versions:
-                logger.debug('Generating diffs %s -> %s', old_version, new_version)
-                CompareTask(self.name, old_version, new_version).generate_diff()
+        for old_version in self.versions:
+            logger.debug('Generating diffs %s -> %s', old_version, new_version)
+            CompareTask(self.name, old_version, new_version).generate_diff()
 
-                if (forward_only):
-                    logger.info('--forward-only: skipping backward patch')
-                else:
-                    logger.debug('Generating diffs %s -> %s', new_version, old_version)
-                    CompareTask(self.name, new_version, old_version).generate_diff()
+            if (forward_only):
+                logger.info('--forward-only: skipping backward patch')
+            else:
+                logger.debug('Generating diffs %s -> %s', new_version, old_version)
+                CompareTask(self.name, new_version, old_version).generate_diff()
 
-            logger.debug('append %s to known versions', new_version)
-            version_file.write('\n' + new_version)
-            existing_versions.append(new_version)
+        logger.debug('append %s to known versions', new_version)
+        self.versions.append(new_version)
+        self._save_info_json()
 
     def cleanup(self) -> None:
         logger.debug('Cleanup %s', self.name)
         remove_folder(self._absolute_path.joinpath("__patches__"))
 
+    def _save_info_json(self):
+        info_json = {
+            "config": {
+                "name": self.name,
+                "latest_version": self.latest_version
+            },
+            "versions": []
+        }
+
+        for v in self.versions:
+            info_json["versions"].append(v)
+
+        with self._absolute_path.joinpath("info.json").open("w+") as file:
+            json.dump(info_json, file)
+
     @classmethod
     def create(cls, path: Path, name: str, first_version: str, mode: str) -> 'Repository':
         repository = Repository(path, name)
-        
+
         # TODO: repository.add_version()
         pass

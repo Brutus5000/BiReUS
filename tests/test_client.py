@@ -42,7 +42,6 @@ async def get_latest_version(mocker, downloader) -> Repository:
     server_latest = server_path.joinpath("repo_demo", "latest.tar.xz")
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_latest, path_to))
     downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
-    downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", ".versions").read_bytes())
 
     return await Repository.get_from_url(client_path, "http://localhost:12345", downloader)
 
@@ -98,6 +97,7 @@ async def test_checkout_version_success(mocker, prepare_server):
 async def test_checkout_version_unknown(mocker, prepare_server):
     downloader = MockDownloadService()
     client_repo = await get_latest_version(mocker, downloader)
+    downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
 
     with pytest.raises(CheckoutError):
         await client_repo.checkout_version("unknown_version")
@@ -115,7 +115,6 @@ async def test_checkout_version_twice_success(mocker, prepare_server):
     server_patch_1_to_2_zip = str(server_path.joinpath("repo_demo", "__patches__", "v1_to_v2.tar.xz"))
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_patch_1_to_2_zip, path_to))
     downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
-    downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", ".versions").read_bytes())
     await client_repo.checkout_version("v2")
 
     assert client_path.joinpath(".bireus", "info.json").exists()
