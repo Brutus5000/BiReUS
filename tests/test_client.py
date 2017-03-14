@@ -126,7 +126,6 @@ async def test_checkout_version_twice_success(mocker, prepare_server):
                          server_path.joinpath("repo_demo", "v2", "new_folder", "new_file.txt"))
 
 
-
 @pytest.mark.asyncio
 async def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_server):
     downloader = MockDownloadService()
