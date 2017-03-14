@@ -18,7 +18,7 @@ def create_simplefile(path: str, name: str, content: str) -> str:
 def empty_repo_with_2_version(tmpdir):
     os.chdir(tmpdir.strpath)
 
-    repo_folder = tmpdir.mkdir("test_repo")
+    repo_folder = tmpdir.mkdir("repo_demo")
     v1_folder = repo_folder.mkdir("v1")
     v2_folder = repo_folder.mkdir("v2")
 
@@ -27,7 +27,7 @@ def empty_repo_with_2_version(tmpdir):
         json.dump(
             {
                 "config": {
-                    "name": "test_repo",
+                    "name": "repo_demo",
                     "latest_version": "v1"
                 },
                 "versions": ["v1"]
@@ -40,7 +40,7 @@ def empty_repo_with_2_version(tmpdir):
 
 def test_load_empty_repo(tmpdir):
     main_path = Path(tmpdir.strpath)
-    repo_path = main_path.joinpath("test_repo")
+    repo_path = main_path.joinpath("repo_demo")
     repo_path.mkdir()
 
     repo_path.joinpath("v1").mkdir()
@@ -50,7 +50,7 @@ def test_load_empty_repo(tmpdir):
         json.dump(
             {
                 "config": {
-                    "name": "test_repo",
+                    "name": "repo_demo",
                     "latest_version": "v1"
                 },
                 "versions": ["v1"]
@@ -59,7 +59,7 @@ def test_load_empty_repo(tmpdir):
         )
 
     repo_manager = RepositoryManager(main_path)
-    assert repo_manager.repositories[0].name == "test_repo"
+    assert repo_manager.repositories[0].name == "repo_demo"
     assert repo_manager.repositories[0].latest_version == "v1"
     assert repo_manager.repositories[0].versions[0] == "v1"
 
@@ -84,7 +84,7 @@ def test_empty_repo(empty_repo_with_2_version):
     assert Path(v1_folder.strpath, '.delta_to', 'v2', '.bireus').exists()  # delta file written
     with Path(v1_folder.strpath, '.delta_to', 'v2', '.bireus').open() as json_file:
         json_result = json.load(json_file)
-        assert json_result['repository'] == "test_repo"
+        assert json_result['repository'] == "repo_demo"
         assert json_result['base_version'] == "v1"
         assert json_result['target_version'] == "v2"
         assert len(json_result['items']) == 1
@@ -94,7 +94,7 @@ def test_empty_repo(empty_repo_with_2_version):
         assert len(json_result['items'][0]['items']) == 0
 
     delta = DiffHead.load_json_file(Path(v1_folder.strpath, '.delta_to', 'v2', '.bireus'))
-    assert delta.repository == "test_repo"
+    assert delta.repository == "repo_demo"
     assert delta.base_version == "v1"
     assert delta.target_version == "v2"
     assert len(delta.items) == 1

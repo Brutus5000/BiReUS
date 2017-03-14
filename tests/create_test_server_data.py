@@ -456,7 +456,7 @@ def create_test_server_data(path: Path):
         json.dump(
             {
                 "config": {
-                    "name": "test_repo",
+                    "name": "repo_demo",
                     "latest_version": "v2"
                 },
                 "versions": ["v1"]
