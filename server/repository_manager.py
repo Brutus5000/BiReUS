@@ -18,8 +18,6 @@ class RepositoryManager(object):
             logger.fatal('%s is no valid directory', str(path))
             raise InvalidRepositoryPathError(path)
 
-        change_dir(path)
-
         self.path = path  # type: Path
         self.repositories = []  # type: List[Repository]
         for repo_dir in get_subdirectory_names(self.path):

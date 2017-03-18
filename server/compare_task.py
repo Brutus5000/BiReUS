@@ -13,20 +13,20 @@ from shared.DiffItem import DiffItem
 
 
 class CompareTask(object):
-    def __init__(self, name: str, base: str, target: str):
+    def __init__(self, absolute_path: Path, name: str, base: str, target: str):
         self.logger = logging.getLogger('server.CompareTask')
 
+        self._absolute_path = absolute_path
         self.name = name
         self.base = base
         self.target = target
 
-        self._basepath = Path(self.name, self.base)  # type: Path
-        self._targetpath = Path(self.name, self.target)  # type: Path
-        self._deltapath = Path(self.name, self.base, '.delta_to', self.target)
+        self._basepath = absolute_path.joinpath(self.base)  # type: Path
+        self._targetpath = absolute_path.joinpath(self.target)  # type: Path
+        self._deltapath = absolute_path.joinpath(self.base, '.delta_to', self.target)
 
     def generate_diff(self, write_deltafile: bool = True) -> DiffHead:
         self.logger.debug('Generating %s delta `%s` -> `%s`', self.name, self.base, self.target)
-        self.logger.debug('working directory is `%s`', os.getcwd())
 
         self._deltapath.mkdir(parents=True, exist_ok=True)
 
@@ -42,10 +42,10 @@ class CompareTask(object):
             with self._deltapath.joinpath('.bireus').open(mode='w+') as diffFile:
                 json.dump(bireus_head.to_dict(), diffFile)
 
-            abs_delta_path = Path.cwd().joinpath(self._deltapath)  # type: Path
-            make_archive(Path(self.name, '__patches__', '%s_to_%s' % (self.base, self.target)), 'xztar',
+            abs_delta_path = self._absolute_path.joinpath(self._deltapath)  # type: Path
+            make_archive(self._absolute_path.joinpath('__patches__', '%s_to_%s' % (self.base, self.target)), 'xztar',
                          abs_delta_path)  # file extension gets added to filename automatically
-            remove_folder(Path(self.name, self.base, '.delta_to'))
+            remove_folder(self._absolute_path.joinpath(self.base, '.delta_to'))
 
         return bireus_head
 
@@ -99,9 +99,9 @@ class CompareTask(object):
                                base_crc='',
                                target_crc='')  # type: DiffItem
 
-        basepath = self._basepath / relative_path / Path(file_path)
-        targetpath = self._targetpath / relative_path / Path(file_path)
-        deltapath = self._deltapath / relative_path / Path(file_path)
+        basepath = self._basepath.joinpath(relative_path, file_path)
+        targetpath = self._targetpath.joinpath(relative_path, file_path)
+        deltapath = self._deltapath.joinpath(relative_path, file_path)
 
         if not basepath.exists():
             copy_file(targetpath, deltapath)
@@ -121,32 +121,28 @@ class CompareTask(object):
                 result_diff.action = 'zipdelta'
                 result_diff.base_crc = result_diff.target_crc = "#ZIPFILE"
 
-                working_directory = Path.cwd()
+                temp = tempfile.TemporaryDirectory(suffix='_dir', prefix='bireus_')  # type: TemporaryDirectory
 
-                temp = tempfile.TemporaryDirectory(suffix='_dir', prefix='bireus_')
-                os.chdir(temp.name)
-
-                temp_basepath = self._basepath
-                temp_targetpath = self._targetpath
-                temp_deltapath = self._deltapath
+                temp_abspath = Path(temp.name)
+                temp_basepath = temp_abspath.joinpath(self._basepath.relative_to(self._absolute_path))
+                temp_targetpath = temp_abspath.joinpath(self._targetpath.relative_to(self._absolute_path))
+                temp_deltapath = temp_abspath.joinpath(self._deltapath.relative_to(self._absolute_path))
 
                 temp_basepath.mkdir(parents=True, exist_ok=True)
                 temp_targetpath.mkdir(parents=True, exist_ok=True)
                 temp_deltapath.mkdir(parents=True, exist_ok=True)
 
-                with zipfile.ZipFile(str(working_directory.joinpath(basepath))) as baseZip:
+                with zipfile.ZipFile(str(basepath)) as baseZip:
                     baseZip.extractall(str(temp_basepath))
 
-                with zipfile.ZipFile(str(working_directory.joinpath(targetpath))) as targetZip:
+                with zipfile.ZipFile(str(targetpath)) as targetZip:
                     targetZip.extractall(str(temp_targetpath))
 
                 self.logger.debug("zipdelta required for `%s`", file_path)
-                zip_diff = CompareTask(self.name, self.base, self.target).generate_diff(False)
-                copy_folder(temp_deltapath, working_directory.joinpath(self._deltapath, file_path))
+                zip_diff = CompareTask(temp_abspath, self.name, self.base, self.target).generate_diff(False)
+                copy_folder(temp_deltapath, self._absolute_path.joinpath(self._deltapath, file_path))
 
                 result_diff.items.extend(zip_diff.items)
-
-                change_dir(working_directory)
             else:
                 result_diff.action = 'bsdiff'
                 bsdiff4.file_diff(str(basepath), str(targetpath), str(deltapath))

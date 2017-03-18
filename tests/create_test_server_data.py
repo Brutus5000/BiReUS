@@ -9,6 +9,8 @@ from pathlib import Path
 import shutil
 import json
 
+from shared import remove_folder
+
 
 def create_test_server_data(path: Path):
     repo_path = path.joinpath("repo_demo")
@@ -465,4 +467,9 @@ def create_test_server_data(path: Path):
         )
 
 if __name__ == '__main__':
-    create_test_server_data(Path.cwd().joinpath("example-server"))
+    server_path = Path.cwd().joinpath("example-server")
+
+    if server_path.exists():
+        remove_folder(server_path)
+
+    create_test_server_data(server_path)

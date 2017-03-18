@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import sys
+from pathlib import Path
 
 from server.repository_manager import RepositoryManager
 
@@ -15,7 +16,7 @@ class Server(object):
     def __init__(self):
         parser = argparse.ArgumentParser(
             description="BiReUS (Bidirectional Repository Update Service) - server component")
-        parser.add_argument('-p', '--path', dest="path", help='file path to the repositories')
+        parser.add_argument('-p', '--path', dest="path", help='file path to the repositories', required=True)
         parser.add_argument('-c', '--cleanup', dest="cleanup", action="store_true",
                             help='cleanup and remove all existing patches')
         parser.add_argument('-fo', '--forward-only', dest="forward_only", action="store_true",
@@ -23,7 +24,7 @@ class Server(object):
         parser.add_argument("--debug", "-d", default='info', choices=['debug', 'info', 'warning', 'error'])
 
         args = parser.parse_args()
-        abspath = os.path.abspath(args.path)
+        abspath = Path(args.path)
 
         streamhandler = logging.StreamHandler(sys.stdout)
         streamhandler.setLevel(self.get_loglevel(args.debug))
@@ -31,9 +32,7 @@ class Server(object):
         streamhandler.setFormatter(formatter)
         root.addHandler(streamhandler)
 
-        if os.path.exists(args.path):
-            os.chdir(args.path)
-        else:
+        if not abspath.exists():
             argparse.ArgumentError("-p", "is not a valid path")
             exit()
 

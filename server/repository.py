@@ -48,13 +48,13 @@ class Repository(object):
 
         for old_version in self.versions:
             logger.debug('Generating diffs %s -> %s', old_version, new_version)
-            CompareTask(self.name, old_version, new_version).generate_diff()
+            CompareTask(self._absolute_path, self.name, old_version, new_version).generate_diff()
 
             if (forward_only):
                 logger.info('--forward-only: skipping backward patch')
             else:
                 logger.debug('Generating diffs %s -> %s', new_version, old_version)
-                CompareTask(self.name, new_version, old_version).generate_diff()
+                CompareTask(self._absolute_path, self.name, new_version, old_version).generate_diff()
 
         logger.debug('append %s to known versions', new_version)
         self.versions.append(new_version)
