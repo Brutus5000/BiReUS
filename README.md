@@ -1,5 +1,7 @@
 # BiReUS - the Bidirectional Repository Update Service
 
+[![Build status](https://travis-ci.org/Brutus5000/BiReUS.svg?branch=master)](https://travis-ci.org/Brutus5000/BiReUS) [![Coveralls Status](https://img.shields.io/coveralls/Brutus5000/BiReUS/master.svg)](https://coveralls.io/github/Brutus5000/BiReUS)
+
 **Important note:** BiReUS is not stable yet. File format compatibility may break during development.
 
 

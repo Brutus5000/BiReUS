@@ -1,5 +1,6 @@
 pytest
 pytest-mock
+pytest-cov
 pytest-asyncio
 bsdiff4
 aiohttp
