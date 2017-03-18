@@ -31,7 +31,7 @@ def move_file(src: Union[str, Path], dst: Union[str, Path]) -> None:
 
 
 def compare_files(file1: Union[str, Path], file2: Union[str, Path]) -> bool:
-    return filecmp.cmp(str(file1), str(file2))
+    return filecmp.cmp(str(file1), str(file2), shallow=False)
 
 
 def change_dir(path: Union[str, Path]) -> None:
