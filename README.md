@@ -25,7 +25,7 @@ BiReUS will only create and apply patches for you. It is intended to be run as a
 ## Example
 If you want to try it out, you can generate a demo repository using `python3 tests/create_test_server_data.py`.
 
-You can now generate the patches using `python3 run-server.py -p tests/example-server`
+You can now generate the patches using `python3 run-server.py update -p tests/example-server`
 
 The example contains all cases at least once (files/folders added, removed, unchanged, changed and zipped).
 
@@ -35,20 +35,16 @@ The example contains all cases at least once (files/folders added, removed, unch
 ### Server
 The server component scans all repositories in the given path and will generate patches for new versions to all existing versions.
 
-Arguments:
-
-* `-p <repository-path>` sets the repository path, _mandatory_
-* `-c` or `--cleanup` removes all existing patches
-* `-fo` or `--forward-only` skips generation of backward-patches
-
-**Note:** For new repositories you need to create an info.json in the repository folder and add the first folder by hand.
+**Arguments:**
+* `add <name>  [-m <mode>] [-fv <first-version>] [-p <repository-path>]` adds a new repository
+* `update [-c] [-p <repository-path>]` scans and adds new versions
 
 
 ### Client
 
 The client component manages single repositories. It must be called from inside your desired working directory (either the top directory if you want to create a new one, or the repository itself if you want to checkout a version).
 
-Arguments:
+**Arguments:**
 * `init <path> <url>` downloads the latest repository from an url to path
 * `checkout` switches to the latest version
 * `checkout <version>` switches to a specified version
@@ -62,7 +58,7 @@ Every delta-zip contains a `.bireus`-file which describes the required actions t
 
 ### Header
 - **base_version:** the version this patch can be applied onto
-- **target_version":** the version after applying the patch
+- **target_version:** the version after applying the patch
 - **repository:** the name of the repository
 - **items:** list of delta-items
 

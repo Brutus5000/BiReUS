@@ -5,14 +5,17 @@
 This script generates you an example-server repository with 2 versions.
 """
 
-from pathlib import Path
-import shutil
 import json
+import shutil
+from pathlib import Path
 
 from shared import remove_folder
 
 
 def create_test_server_data(path: Path):
+    if path.exists():
+        remove_folder(path)
+
     repo_path = path.joinpath("repo_demo")
 
     def create_simplefile(path: Path, name: str, content: str) -> str:
@@ -20,9 +23,6 @@ def create_test_server_data(path: Path):
         with open(abs_path, 'w+') as file:
             file.write(content)
             return abs_path
-
-    if repo_path.exists():
-        shutil.rmtree(str(repo_path))
 
     repo_path.mkdir(parents=True)
     repo_path.joinpath("v1").mkdir()
@@ -454,12 +454,13 @@ def create_test_server_data(path: Path):
     shutil.rmtree(str(repo_path.joinpath("temp1")))
     shutil.rmtree(str(repo_path.joinpath("temp2")))
 
-    with open(str(repo_path.joinpath("info.json")), 'w+') as info_file:
+    with repo_path.joinpath("info.json").open(mode='w+') as info_file:
         json.dump(
             {
                 "config": {
                     "name": "repo_demo",
-                    "latest_version": "v2"
+                    "latest_version": "v2",
+                    "mode": "bi"
                 },
                 "versions": ["v1"]
             },
@@ -468,8 +469,5 @@ def create_test_server_data(path: Path):
 
 if __name__ == '__main__':
     server_path = Path.cwd().joinpath("example-server")
-
-    if server_path.exists():
-        remove_folder(server_path)
 
     create_test_server_data(server_path)

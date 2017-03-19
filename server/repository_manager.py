@@ -31,11 +31,11 @@ class RepositoryManager(object):
 
         logger.info('full_cleanup finished')
 
-    def full_update(self, forward_only: bool = False) -> None:
+    def full_update(self) -> None:
         logger.info('full_update started for %s', str(self.path))
 
         for repo in self.repositories:
-            repo.update(forward_only)
+            repo.update()
 
         logger.info('full_update finished')
 
@@ -45,7 +45,7 @@ class RepositoryManager(object):
         :param name: name of repository
         :param first_version: name of the first version
         :param mode: 'bi' for bidirectional patching, 'fo' for forward only patching
-        :return: represantation of the new repository
+        :return: representation of the new repository
         """
 
         logger.info('create repository %s with version %s (mode=%s)' % (name, first_version, mode))

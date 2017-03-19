@@ -16,8 +16,6 @@ def create_simplefile(path: str, name: str, content: str) -> str:
 
 @pytest.fixture()
 def empty_repo_with_2_version(tmpdir):
-    os.chdir(tmpdir.strpath)
-
     repo_folder = tmpdir.mkdir("repo_demo")
     v1_folder = repo_folder.mkdir("v1")
     v2_folder = repo_folder.mkdir("v2")
@@ -28,7 +26,8 @@ def empty_repo_with_2_version(tmpdir):
             {
                 "config": {
                     "name": "repo_demo",
-                    "latest_version": "v1"
+                    "latest_version": "v1",
+                    "mode": "bi"
                 },
                 "versions": ["v1"]
             },
@@ -51,7 +50,8 @@ def test_load_empty_repo(tmpdir):
             {
                 "config": {
                     "name": "repo_demo",
-                    "latest_version": "v1"
+                    "latest_version": "v1",
+                    "mode": "bi"
                 },
                 "versions": ["v1"]
             },
@@ -321,13 +321,29 @@ def test_cleanup(empty_repo_with_2_version):
     assert not Path(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz").exists()
 
 
-def test_forward_only(empty_repo_with_2_version):
-    tmpdir, repo_folder, v1_folder, v2_folder = empty_repo_with_2_version
+def test_forward_only(tmpdir):
+    repo_folder = tmpdir.mkdir("repo_demo")
+    v1_folder = repo_folder.mkdir("v1")
+    v2_folder = repo_folder.mkdir("v2")
+
+    info_json = repo_folder.join("info.json")
+    with info_json.open("w") as file:
+        json.dump(
+            {
+                "config": {
+                    "name": "repo_demo",
+                    "latest_version": "v1",
+                    "mode": "fo"
+                },
+                "versions": ["v1"]
+            },
+            file
+        )
 
     v2_folder_FA = v2_folder.mkdir("fa")  # folder FA added
 
     repo_manager = RepositoryManager(Path(tmpdir.strpath))
-    repo_manager.full_update(forward_only=True)
+    repo_manager.full_update()
 
     assert Path(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz").exists()
     assert not Path(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz").exists()
@@ -339,7 +355,37 @@ def test_forward_only_negative(empty_repo_with_2_version):
     v2_folder_FA = v2_folder.mkdir("fa")  # folder FA added
 
     repo_manager = RepositoryManager(Path(tmpdir.strpath))
-    repo_manager.full_update(forward_only=False)
+    repo_manager.full_update()
 
     assert Path(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz").exists()
     assert Path(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz").exists()
+
+
+def test_create_repository(tmpdir):
+    path = Path(tmpdir.strpath)
+    repo_manager = RepositoryManager(path)
+    repo_manager.create("new_repo")
+
+    with path.joinpath("new_repo", "info.json").open("r") as file:
+        info_json = json.load(file)
+
+    assert path.joinpath("new_repo", "1.0.0").exists()
+    assert info_json["config"]["name"] == "new_repo"
+    assert info_json["config"]["latest_version"] == "1.0.0"
+    assert info_json["config"]["mode"] == "bi"
+    assert len(info_json["versions"]) == 0
+
+
+def test_create_repository_2(tmpdir):
+    path = Path(tmpdir.strpath)
+    repo_manager = RepositoryManager(path)
+    repo_manager.create("new_repo", "v1", "fo")
+
+    with path.joinpath("new_repo", "info.json").open("r") as file:
+        info_json = json.load(file)
+
+    assert path.joinpath("new_repo", "v1").exists()
+    assert info_json["config"]["name"] == "new_repo"
+    assert info_json["config"]["latest_version"] == "v1"
+    assert info_json["config"]["mode"] == "fo"
+    assert len(info_json["versions"]) == 0

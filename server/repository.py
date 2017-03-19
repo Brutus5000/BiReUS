@@ -1,6 +1,5 @@
-import logging
 import json
-from typing import List
+import logging
 
 from server import get_subdirectory_names
 from server.compare_task import CompareTask
@@ -18,9 +17,10 @@ class Repository(object):
             info_json = json.load(file)
 
         self.latest_version = info_json["config"]["latest_version"]
+        self.mode = info_json["config"]["mode"]
         self.versions = info_json["versions"]
 
-    def update(self, forward_only: bool = False) -> None:
+    def update(self) -> None:
         if not self._absolute_path.joinpath('info.json').exists():
             logger.error("Repository %s is missing info.json - skipping repo", self.name)
             return
@@ -41,17 +41,17 @@ class Repository(object):
         for version_dir in version_list:
             if version_dir not in self.versions:
                 logger.info("new version: %s", version_dir)
-                self.add_version(version_dir, forward_only)
+                self.add_version(version_dir)
 
-    def add_version(self, new_version: str, forward_only: bool = False) -> None:
+    def add_version(self, new_version: str) -> None:
         logger.debug("existing versions: %s", self.versions)
 
         for old_version in self.versions:
             logger.debug('Generating diffs %s -> %s', old_version, new_version)
             CompareTask(self._absolute_path, self.name, old_version, new_version).generate_diff()
 
-            if (forward_only):
-                logger.info('--forward-only: skipping backward patch')
+            if (self.mode == "fo"):
+                logger.info('forward-only: skipping backward patch')
             else:
                 logger.debug('Generating diffs %s -> %s', new_version, old_version)
                 CompareTask(self._absolute_path, self.name, new_version, old_version).generate_diff()
@@ -68,7 +68,8 @@ class Repository(object):
         info_json = {
             "config": {
                 "name": self.name,
-                "latest_version": self.latest_version
+                "latest_version": self.latest_version,
+                "mode": self.mode
             },
             "versions": []
         }
@@ -81,7 +82,21 @@ class Repository(object):
 
     @classmethod
     def create(cls, path: Path, name: str, first_version: str, mode: str) -> 'Repository':
-        repository = Repository(path, name)
+        version_path = path.joinpath(first_version)
+        version_path.mkdir(parents=True)
 
-        # TODO: repository.add_version()
-        pass
+        with path.joinpath("info.json").open("w+") as file:
+            info_json = {
+                "config": {
+                    "name": name,
+                    "latest_version": first_version,
+                    "mode": mode
+                },
+                "versions": []
+            }
+
+            json.dump(info_json, file)
+
+        logger.info("Repository %s created, copy your content into %s and run update", name, str(version_path))
+
+        return Repository(path, name)

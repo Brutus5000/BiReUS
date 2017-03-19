@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bidirectional Repository Update Service - client component"""
-import asyncio
 import argparse
+import asyncio
 import logging
 import os
 import sys
@@ -42,7 +42,7 @@ class Client(object):
 
         streamhandler = logging.StreamHandler(sys.stdout)
         streamhandler.setLevel(self.get_loglevel(args.debug))
-        formatter = logging.Formatter('%(name)-20s - %(levelname)-5s - %(message)s')
+        formatter = logging.Formatter('%(name)-25s - %(levelname)-5s - %(message)s')
         streamhandler.setFormatter(formatter)
         root.addHandler(streamhandler)
 
