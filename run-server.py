@@ -25,7 +25,7 @@ class Server(object):
         parser_add = subparsers.add_parser("add")
         parser_add.add_argument("name", help="name of the repository")
         parser_add.add_argument("--first-version", "-fv", default="1.0.0", help="name of the initial version")
-        parser_add.add_argument("--mode", "-m", default="bi", help="update mode")
+        parser_add.add_argument("--strategy", "-m", default="bi", help="update strategy")
         parser_add.add_argument("--path", "-p", default=os.getcwd(), help="repository root path")
 
         parser_update = subparsers.add_parser("update")
@@ -50,7 +50,7 @@ class Server(object):
         repo_manager = RepositoryManager(Path(args.path))
 
         if args.command == "add":
-            repo_manager.create(args.name, args.first_version, args.mode)
+            repo_manager.create(args.name, args.first_version, args.strategy)
             print("Repository %s created, copy your content into %s and run update" % (
             args.name, str(Path(args.path, args.first_version))))
 

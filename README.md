@@ -36,7 +36,7 @@ The example contains all cases at least once (files/folders added, removed, unch
 The server component scans all repositories in the given path and will generate patches for new versions to all existing versions.
 
 **Arguments:**
-* `add <name>  [-m <mode>] [-fv <first-version>] [-p <repository-path>]` adds a new repository
+* `add <name>  [-m <strategy>] [-fv <first-version>] [-p <repository-path>]` adds a new repository
 * `update [-c] [-p <repository-path>]` scans and adds new versions
 
 

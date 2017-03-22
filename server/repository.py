@@ -17,7 +17,7 @@ class Repository(object):
             info_json = json.load(file)
 
         self.latest_version = info_json["config"]["latest_version"]
-        self.mode = info_json["config"]["mode"]
+        self.strategy = info_json["config"]["strategy"]
         self.versions = info_json["versions"]
 
     def update(self) -> None:
@@ -50,7 +50,7 @@ class Repository(object):
             logger.debug('Generating diffs %s -> %s', old_version, new_version)
             CompareTask(self._absolute_path, self.name, old_version, new_version).generate_diff()
 
-            if (self.mode == "fo"):
+            if (self.strategy == "fo"):
                 logger.info('forward-only: skipping backward patch')
             else:
                 logger.debug('Generating diffs %s -> %s', new_version, old_version)
@@ -69,7 +69,7 @@ class Repository(object):
             "config": {
                 "name": self.name,
                 "latest_version": self.latest_version,
-                "mode": self.mode
+                "strategy": self.strategy
             },
             "versions": []
         }
@@ -81,7 +81,7 @@ class Repository(object):
             json.dump(info_json, file)
 
     @classmethod
-    def create(cls, path: Path, name: str, first_version: str, mode: str) -> 'Repository':
+    def create(cls, path: Path, name: str, first_version: str, strategy: str) -> 'Repository':
         version_path = path.joinpath(first_version)
         version_path.mkdir(parents=True)
 
@@ -90,7 +90,7 @@ class Repository(object):
                 "config": {
                     "name": name,
                     "latest_version": first_version,
-                    "mode": mode
+                    "strategy": strategy
                 },
                 "versions": []
             }

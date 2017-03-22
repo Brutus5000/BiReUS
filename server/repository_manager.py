@@ -39,16 +39,16 @@ class RepositoryManager(object):
 
         logger.info('full_update finished')
 
-    def create(self, name: str, first_version: str = "1.0.0", mode="bi") -> Repository:
+    def create(self, name: str, first_version: str = "1.0.0", strategy="bi") -> Repository:
         """
         Creates a new repository
         :param name: name of repository
         :param first_version: name of the first version
-        :param mode: 'bi' for bidirectional patching, 'fo' for forward only patching
+        :param strategy: 'bi' for bidirectional patching, 'fo' for forward only patching
         :return: representation of the new repository
         """
 
-        logger.info('create repository %s with version %s (mode=%s)' % (name, first_version, mode))
-        repository = Repository.create(self.path.joinpath(name), name, first_version, mode)
+        logger.info('create repository %s with version %s (strategy=%s)' % (name, first_version, strategy))
+        repository = Repository.create(self.path.joinpath(name), name, first_version, strategy)
         self.repositories.append(repository)
         return repository

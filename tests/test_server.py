@@ -27,7 +27,7 @@ def empty_repo_with_2_version(tmpdir):
                 "config": {
                     "name": "repo_demo",
                     "latest_version": "v1",
-                    "mode": "bi"
+                    "strategy": "bi"
                 },
                 "versions": ["v1"]
             },
@@ -51,7 +51,7 @@ def test_load_empty_repo(tmpdir):
                 "config": {
                     "name": "repo_demo",
                     "latest_version": "v1",
-                    "mode": "bi"
+                    "strategy": "bi"
                 },
                 "versions": ["v1"]
             },
@@ -333,7 +333,7 @@ def test_forward_only(tmpdir):
                 "config": {
                     "name": "repo_demo",
                     "latest_version": "v1",
-                    "mode": "fo"
+                    "strategy": "fo"
                 },
                 "versions": ["v1"]
             },
@@ -372,7 +372,7 @@ def test_create_repository(tmpdir):
     assert path.joinpath("new_repo", "1.0.0").exists()
     assert info_json["config"]["name"] == "new_repo"
     assert info_json["config"]["latest_version"] == "1.0.0"
-    assert info_json["config"]["mode"] == "bi"
+    assert info_json["config"]["strategy"] == "bi"
     assert len(info_json["versions"]) == 0
 
 
@@ -387,5 +387,5 @@ def test_create_repository_2(tmpdir):
     assert path.joinpath("new_repo", "v1").exists()
     assert info_json["config"]["name"] == "new_repo"
     assert info_json["config"]["latest_version"] == "v1"
-    assert info_json["config"]["mode"] == "fo"
+    assert info_json["config"]["strategy"] == "fo"
     assert len(info_json["versions"]) == 0
