@@ -26,6 +26,7 @@ def empty_repo_with_2_version(tmpdir):
             {
                 "config": {
                     "name": "repo_demo",
+                    "first_version": "v1",
                     "latest_version": "v1",
                     "strategy": "bi"
                 },
@@ -50,6 +51,7 @@ def test_load_empty_repo(tmpdir):
             {
                 "config": {
                     "name": "repo_demo",
+                    "first_version": "v1",
                     "latest_version": "v1",
                     "strategy": "bi"
                 },
@@ -60,6 +62,7 @@ def test_load_empty_repo(tmpdir):
 
     repo_manager = RepositoryManager(main_path)
     assert repo_manager.repositories[0].name == "repo_demo"
+    assert repo_manager.repositories[0].first_version == "v1"
     assert repo_manager.repositories[0].latest_version == "v1"
     assert repo_manager.repositories[0].versions[0] == "v1"
 
@@ -332,6 +335,7 @@ def test_forward_only(tmpdir):
             {
                 "config": {
                     "name": "repo_demo",
+                    "first_version": "v1",
                     "latest_version": "v1",
                     "strategy": "fo"
                 },

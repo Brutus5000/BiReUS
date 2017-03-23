@@ -459,6 +459,7 @@ def create_test_server_data(path: Path):
             {
                 "config": {
                     "name": "repo_demo",
+                    "first_version": "v1",
                     "latest_version": "v2",
                     "strategy": "bi"
                 },

@@ -16,6 +16,7 @@ class Repository(object):
         with absolute_path.joinpath("info.json").open("r") as file:
             info_json = json.load(file)
 
+        self.first_version = info_json["config"]["first_version"]
         self.latest_version = info_json["config"]["latest_version"]
         self.strategy = info_json["config"]["strategy"]
         self.versions = info_json["versions"]
@@ -68,6 +69,7 @@ class Repository(object):
         info_json = {
             "config": {
                 "name": self.name,
+                "first_version": self.first_version,
                 "latest_version": self.latest_version,
                 "strategy": self.strategy
             },
@@ -89,6 +91,7 @@ class Repository(object):
             info_json = {
                 "config": {
                     "name": name,
+                    "first_version": first_version,
                     "latest_version": first_version,
                     "strategy": strategy
                 },
