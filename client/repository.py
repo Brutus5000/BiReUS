@@ -4,11 +4,10 @@ import tempfile
 from typing import List
 from urllib.parse import urljoin
 
-
 from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
 from client.patch_task import PatchTask
 from shared import *
-from shared.DiffHead import DiffHead
+from shared.diff_head import DiffHead
 
 logger = logging.getLogger(__name__)
 

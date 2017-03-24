@@ -7,8 +7,8 @@ import bsdiff4
 
 from client.download_service import AbstractDownloadService
 from shared import *
-from shared.DiffHead import DiffHead
-from shared.DiffItem import DiffItem
+from shared.diff_head import DiffHead
+from shared.diff_item import DiffItem
 
 logger = logging.getLogger(__name__)
 

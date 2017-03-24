@@ -5,7 +5,7 @@ import pytest
 
 from server.repository_manager import RepositoryManager, InvalidRepositoryPathError
 from shared import *
-from shared.DiffHead import DiffHead
+from shared.diff_head import DiffHead
 
 
 def create_simplefile(path: str, name: str, content: str) -> str:

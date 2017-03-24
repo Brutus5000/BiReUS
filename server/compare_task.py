@@ -8,8 +8,8 @@ import bsdiff4
 from server import get_subdirectory_names, get_filenames
 from shared import *
 from shared import crc32_from_file
-from shared.DiffHead import DiffHead
-from shared.DiffItem import DiffItem
+from shared.diff_head import DiffHead
+from shared.diff_item import DiffItem
 
 
 class CompareTask(object):

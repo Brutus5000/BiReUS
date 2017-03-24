@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any
 
-from shared.DiffItem import DiffItem
+from shared.diff_item import DiffItem
 
 
 class DiffHead(object):
