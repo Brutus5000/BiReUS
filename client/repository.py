@@ -1,13 +1,13 @@
 import json
 import logging
 import tempfile
-from typing import List
 from urllib.parse import urljoin
 
 from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
 from client.patch_task import PatchTask
 from shared import *
 from shared.diff_head import DiffHead
+from shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -16,50 +16,32 @@ class CheckoutError(Exception):
     pass
 
 
-class Repository(object):
+class ClientRepository(BaseRepository):
     def __init__(self, absolute_path: Path, download_service: AbstractDownloadService = None):
+        super().__init__(absolute_path)
+
         if download_service is None:
             self._download_service = BasicDownloadService()
         else:
             self._download_service = download_service
 
-        if not absolute_path.exists():
-            logger.error("repository path `%s` does not exist", absolute_path)
-            raise FileNotFoundError("repository path `%s` does not exist", absolute_path)
-
-        info_file = absolute_path.joinpath('.bireus', 'info.json')
-
-        if not info_file.exists():
-            logger.error("`%s` is not a valid BiReUS client repository", absolute_path)
-            raise ValueError("`%s` is not a valid BiReUS client repository", absolute_path)
-
-        logger.debug("Initialize Repository @ %s ", absolute_path)
-
-        with absolute_path.joinpath('.bireus', 'info.json').open("r") as data_file:
-            self._metadata = json.load(data_file)
-
-        self._absolute_path = absolute_path
         self._internal_path = Path('.bireus')
 
     @property
-    def name(self) -> str:
-        return self._metadata['name']
+    def info_path(self) -> Path:
+        return self._absolute_path.joinpath('.bireus', 'info.json')
+
+    @property
+    def version_graph_path(self) -> Path:
+        return self._absolute_path.joinpath('.bireus', 'versions.gml')
 
     @property
     def current_version(self) -> str:
         return self._metadata ['config']['current_version']
 
     @property
-    def latest_version(self) -> str:
-        return self._metadata['config']['latest_version']
-
-    @property
     def url(self) -> str:
         return self._metadata['config']['url']
-
-    @property
-    def versions(self) -> List[str]:
-        return self._metadata['versions']
 
     async def latest_from_remote(self) -> str:
         content = await self._download_service.read(urljoin(self.url, '/info.json'))
@@ -145,7 +127,8 @@ class Repository(object):
         await PatchTask(self._download_service, self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head, diff_head.items[0]).patch()
 
     @classmethod
-    async def get_from_url(cls, path: Path, url: str, download_service: AbstractDownloadService = None) -> 'Repository':
+    async def get_from_url(cls, path: Path, url: str,
+                           download_service: AbstractDownloadService = None) -> 'ClientRepository':
         if download_service is None:
             logger.debug("Using BasicDownloadService")
             download_service = BasicDownloadService()
@@ -179,4 +162,4 @@ class Repository(object):
             unpack_archive(tmpfilepath, path, 'xztar')
             logger.info("Downloaded and unpacked latest.tar.xz")
 
-        return Repository(path, download_service)
+        return ClientRepository(path, download_service)

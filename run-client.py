@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from client.repository import Repository
+from client.repository import ClientRepository
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -49,9 +49,9 @@ class Client(object):
         loop = asyncio.get_event_loop()
 
         if args.command == 'init':
-            loop.run_until_complete(Repository.get_from_url(Path(args.path), args.url))
+            loop.run_until_complete(ClientRepository.get_from_url(Path(args.path), args.url))
         elif args.command == 'checkout':
-            repo = Repository(Path(args.path))
+            repo = ClientRepository(Path(args.path))
 
             if args.version == 'latest':
                 loop.run_until_complete(repo.checkout_latest())

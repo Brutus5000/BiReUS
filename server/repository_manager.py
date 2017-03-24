@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from server import get_subdirectory_names
-from server.repository import Repository
+from server.repository import ServerRepository
 from shared import *
 
 logger = logging.getLogger(__name__)
@@ -19,9 +19,9 @@ class RepositoryManager(object):
             raise InvalidRepositoryPathError(path)
 
         self.path = path  # type: Path
-        self.repositories = []  # type: List[Repository]
+        self.repositories = []  # type: List[ServerRepository]
         for repo_dir in get_subdirectory_names(self.path):
-            self.repositories.append(Repository(path.joinpath(repo_dir), repo_dir))
+            self.repositories.append(ServerRepository(path.joinpath(repo_dir)))
 
     def full_cleanup(self) -> None:
         logger.info('full_cleanup started for %s', str(self.path))
@@ -39,7 +39,7 @@ class RepositoryManager(object):
 
         logger.info('full_update finished')
 
-    def create(self, name: str, first_version: str = "1.0.0", strategy="bi") -> Repository:
+    def create(self, name: str, first_version: str = "1.0.0", strategy="bi") -> ServerRepository:
         """
         Creates a new repository
         :param name: name of repository
@@ -49,6 +49,6 @@ class RepositoryManager(object):
         """
 
         logger.info('create repository %s with version %s (strategy=%s)' % (name, first_version, strategy))
-        repository = Repository.create(self.path.joinpath(name), name, first_version, strategy)
+        repository = ServerRepository.create(self.path.joinpath(name), name, first_version, strategy)
         self.repositories.append(repository)
         return repository

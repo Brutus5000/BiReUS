@@ -4,22 +4,22 @@ import logging
 from server import get_subdirectory_names
 from server.compare_task import CompareTask
 from shared import *
+from shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
-class Repository(object):
-    def __init__(self, absolute_path: Path, name: str):
-        self.name = name
-        self._absolute_path = absolute_path
+class ServerRepository(BaseRepository):
+    def __init__(self, absolute_path: Path):
+        super().__init__(absolute_path)
 
-        with absolute_path.joinpath("info.json").open("r") as file:
-            info_json = json.load(file)
+    @property
+    def info_path(self) -> Path:
+        return self._absolute_path.joinpath('info.json')
 
-        self.first_version = info_json["config"]["first_version"]
-        self.latest_version = info_json["config"]["latest_version"]
-        self.strategy = info_json["config"]["strategy"]
-        self.versions = info_json["versions"]
+    @property
+    def version_graph_path(self) -> Path:
+        return self._absolute_path.joinpath('versions.gml')
 
     def update(self) -> None:
         if not self._absolute_path.joinpath('info.json').exists():
@@ -83,7 +83,7 @@ class Repository(object):
             json.dump(info_json, file)
 
     @classmethod
-    def create(cls, path: Path, name: str, first_version: str, strategy: str) -> 'Repository':
+    def create(cls, path: Path, name: str, first_version: str, strategy: str) -> 'ServerRepository':
         version_path = path.joinpath(first_version)
         version_path.mkdir(parents=True)
 
@@ -102,4 +102,4 @@ class Repository(object):
 
         logger.info("Repository %s created, copy your content into %s and run update", name, str(version_path))
 
-        return Repository(path, name)
+        return ServerRepository(path)

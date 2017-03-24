@@ -4,7 +4,7 @@ import sys
 import pytest
 
 from client.download_service import DownloadError
-from client.repository import Repository, CheckoutError
+from client.repository import ClientRepository, CheckoutError
 from server.repository_manager import RepositoryManager
 from shared import *
 from tests.create_test_server_data import create_test_server_data
@@ -36,28 +36,35 @@ def prepare_server():
     # teardown
 
 
-async def get_latest_version(mocker, downloader) -> Repository:
+async def get_latest_version(mocker, downloader) -> ClientRepository:
     global client_repo
 
     server_latest = server_path.joinpath("repo_demo", "latest.tar.xz")
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_latest, path_to))
     downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
 
-    return await Repository.get_from_url(client_path, "http://localhost:12345", downloader)
+    return await ClientRepository.get_from_url(client_path, "http://localhost:12345", downloader)
 
 
 @pytest.mark.asyncio
 async def test_get_from_url_folder_exists():
     Path("example-client").mkdir(exist_ok=True)
     with pytest.raises(FileExistsError):
-        await Repository.get_from_url(client_path, "http://localhost:12345", MockDownloadService(lambda: None))
+        await ClientRepository.get_from_url(client_path, "http://localhost:12345", MockDownloadService(lambda: None))
 
 
 @pytest.mark.asyncio
 async def test_get_from_url_http_error():
     remove_folder(client_path)
     with pytest.raises(DownloadError):
-        await Repository.get_from_url(client_path, "http://localhost:12345", MockDownloadService(lambda: None, lambda url: (_ for _ in ()).throw(DownloadError(None, url))))
+        await ClientRepository.get_from_url(client_path, "http://localhost:12345", MockDownloadService(lambda: None,
+                                                                                                       lambda url: (_
+                                                                                                                    for
+                                                                                                                    _ in
+                                                                                                                    ()).throw(
+                                                                                                           DownloadError(
+                                                                                                               None,
+                                                                                                               url))))
 
 
 @pytest.mark.asyncio
