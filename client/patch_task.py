@@ -14,11 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class CrcMismatchError(Exception):
-    def __init__(self, file: Path, expectedCrc: str, actuaclCrc: str):
-        super(CrcMismatchError, self).__init__(self, 'File %s with wrong CRC code (expected=%s, actual=%s)' % (str(file), expectedCrc, actuaclCrc))
+    def __init__(self, file: Path, expected_crc: str, actual_crc: str):
+        super(CrcMismatchError, self).__init__(self, 'File %s with wrong CRC code (expected=%s, actual=%s)' % (
+            str(file), expected_crc, actual_crc))
         self.file = file
-        self.expectedCrc = expectedCrc
-        self.actualCrc = actuaclCrc
+        self.expectedCrc = expected_crc
+        self.actualCrc = actual_crc
 
 
 class PatchTask(object):
@@ -104,7 +105,7 @@ class PatchTask(object):
         if self._diff_info.target_crc == target_crc_after_patch:
             logger.debug('CRC32 ok')
         else:
-            raise CrcMismatchError(dest_path, self._diff_info.target_crc)
+            raise CrcMismatchError(dest_path, self._diff_info.target_crc, target_crc_after_patch)
 
     async def _patch_directory(self) -> None:
         action = self._diff_info.action

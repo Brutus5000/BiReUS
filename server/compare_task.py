@@ -2,6 +2,7 @@ import json
 import logging
 import tempfile
 import zipfile
+from tempfile import TemporaryDirectory
 
 import bsdiff4
 

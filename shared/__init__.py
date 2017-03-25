@@ -38,9 +38,9 @@ def change_dir(path: Union[str, Path]) -> None:
     os.chdir(str(path))
 
 
-def make_archive(basename: Union[str, Path], format: str, root_dir: Union[str, Path]):
-    return shutil.make_archive(str(basename), format, str(root_dir))
+def make_archive(basename: Union[str, Path], archive_format: str, root_dir: Union[str, Path]):
+    return shutil.make_archive(str(basename), archive_format, str(root_dir))
 
 
-def unpack_archive(filename: Union[str, Path], extract_dir: Union[str, Path], format: Any = None):
-    return shutil.unpack_archive(str(filename), str(extract_dir), format)
+def unpack_archive(filename: Union[str, Path], extract_dir: Union[str, Path], archive_format: Any = None):
+    return shutil.unpack_archive(str(filename), str(extract_dir), archive_format)

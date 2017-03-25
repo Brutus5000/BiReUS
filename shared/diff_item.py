@@ -2,12 +2,18 @@ from typing import List, Any, Dict
 
 
 class DiffItem(object):
-    def __init__(self, iotype: str, name: str, base_crc, target_crc, action: str = '', items: List['DiffItem'] = []):
+    """
+    Represents an item of a .bireus file (file or directory)
+    """
+
+    def __init__(self, iotype: str, name: str, base_crc, target_crc, action: str = '', items: List['DiffItem'] = None):
+        if items is None:
+            items = []
+
         self._type = iotype
         self._name = name
         self._action = action
-        self._items = []
-        self._items.extend(items)
+        self._items = items  # type: List['DiffItem']
 
         self._base_crc = base_crc
         self._target_crc = target_crc

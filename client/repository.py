@@ -58,7 +58,6 @@ class ClientRepository(BaseRepository):
                 json.dump(self._metadata, info_file)
         except DownloadError:
             logger.warning("Remote repository unreachable, use local instead")
-            version = self.latest_version
 
         await self.checkout_version(self.latest_version)
 

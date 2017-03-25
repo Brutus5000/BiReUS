@@ -6,12 +6,18 @@ from shared.diff_item import DiffItem
 
 
 class DiffHead(object):
-    def __init__(self, repository: str, base_version: str, target_version: str, items: List[DiffItem] = []):
+    """
+    Represents the head of a .bireus file
+    """
+
+    def __init__(self, repository: str, base_version: str, target_version: str, items: List[DiffItem] = None):
+        if items is None:
+            items = []
+
         self._repository = repository
         self._base_version = base_version
         self._target_version = target_version
-        self._items = []
-        self._items.extend(items)
+        self._items = items
 
     @property
     def repository(self) -> str:

@@ -53,7 +53,7 @@ class ServerRepository(BaseRepository):
             logger.debug('Generating diffs %s -> %s', old_version, new_version)
             CompareTask(self._absolute_path, self.name, old_version, new_version).generate_diff()
 
-            if (self.strategy == "fo"):
+            if self.strategy == "fo":
                 logger.info('forward-only: skipping backward patch')
             else:
                 logger.debug('Generating diffs %s -> %s', new_version, old_version)
