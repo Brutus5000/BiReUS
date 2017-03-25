@@ -4,8 +4,9 @@ import logging
 
 import networkx
 
-from server import get_subdirectory_names
+from server import get_subdirectory_names, patching_strategies
 from server.compare_task import CompareTask
+from server.patch_strategy import AbstractStrategy
 from shared import *
 from shared.repository import BaseRepository
 
@@ -50,15 +51,16 @@ class ServerRepository(BaseRepository):
     def add_version(self, new_version: str) -> None:
         logger.debug("existing versions: %s", self.versions)
 
-        for old_version in self.versions:
-            logger.debug('Generating diffs %s -> %s', old_version, new_version)
-            CompareTask(self._absolute_path, self.name, old_version, new_version).generate_diff()
+        logger.info("patching strategy: %s", self.strategy)
 
-            if self.strategy == "fo":
-                logger.info('forward-only: skipping backward patch')
-            else:
-                logger.debug('Generating diffs %s -> %s', new_version, old_version)
-                CompareTask(self._absolute_path, self.name, new_version, old_version).generate_diff()
+        strategy = patching_strategies[self.strategy]  # type: AbstractStrategy
+        patch_paths = strategy.get_required_patches(self.version_graph, self.latest_version, new_version)
+
+        for patch in patch_paths:
+            version_from = patch[0]
+            version_to = patch[1]
+            logger.debug('Generating diffs %s -> %s', version_from, version_to)
+            CompareTask(self._absolute_path, self.name, version_from, version_to).generate_diff()
 
         logger.debug('append %s to known versions', new_version)
         self.versions.append(new_version)

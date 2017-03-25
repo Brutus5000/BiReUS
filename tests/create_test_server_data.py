@@ -15,7 +15,7 @@ import networkx
 from shared import remove_folder
 
 
-def create_test_server_data(path: Path):
+def create_test_server_data(path: Path, strategy: str):
     if path.exists():
         remove_folder(path)
 
@@ -464,7 +464,7 @@ def create_test_server_data(path: Path):
                     "name": "repo_demo",
                     "first_version": "v1",
                     "latest_version": "v2",
-                    "strategy": "bi"
+                    "strategy": strategy
                 },
                 "versions": ["v1"]
             },
@@ -478,4 +478,4 @@ def create_test_server_data(path: Path):
 if __name__ == '__main__':
     server_path = Path.cwd().joinpath("example-server")
 
-    create_test_server_data(server_path)
+    create_test_server_data(server_path, "inst-bi")

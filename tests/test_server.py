@@ -30,7 +30,7 @@ def empty_repo_with_2_version(tmpdir):
                     "name": "repo_demo",
                     "first_version": "v1",
                     "latest_version": "v1",
-                    "strategy": "bi"
+                    "strategy": "inst-bi"
                 },
                 "versions": ["v1"]
             },
@@ -62,7 +62,7 @@ def test_load_empty_repo(tmpdir):
                     "name": "repo_demo",
                     "first_version": "v1",
                     "latest_version": "v1",
-                    "strategy": "bi"
+                    "strategy": "inst-bi"
                 },
                 "versions": ["v1"]
             },
@@ -346,7 +346,7 @@ def test_forward_only(tmpdir):
                     "name": "repo_demo",
                     "first_version": "v1",
                     "latest_version": "v1",
-                    "strategy": "fo"
+                    "strategy": "inst-fo"
                 },
                 "versions": ["v1"]
             },

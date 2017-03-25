@@ -27,7 +27,7 @@ client_path = Path.cwd().joinpath("example-client")
 @pytest.fixture()
 def prepare_server():
     # create demo repo
-    create_test_server_data(server_path)
+    create_test_server_data(server_path, "inst-bi")
     RepositoryManager(server_path).full_update()
     if client_path.exists():
         remove_folder(client_path)
