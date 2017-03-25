@@ -9,6 +9,8 @@ import json
 import shutil
 from pathlib import Path
 
+import networkx
+
 from shared import remove_folder
 
 
@@ -467,6 +469,10 @@ def create_test_server_data(path: Path):
             },
             info_file
         )
+
+    version_graph = networkx.DiGraph()
+    version_graph.add_node("v1")
+    networkx.write_gml(version_graph, str(repo_path.joinpath("versions.gml")))
 
 if __name__ == '__main__':
     server_path = Path.cwd().joinpath("example-server")

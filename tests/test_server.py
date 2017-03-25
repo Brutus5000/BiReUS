@@ -1,6 +1,7 @@
 import json
 
 import bsdiff4
+import networkx
 import pytest
 
 from server.repository_manager import RepositoryManager, InvalidRepositoryPathError
@@ -35,6 +36,10 @@ def empty_repo_with_2_version(tmpdir):
             file
         )
 
+    version_graph = networkx.DiGraph()
+    version_graph.add_node("v1")
+    networkx.write_gml(version_graph, str(repo_folder.join("versions.gml")))
+
     return tmpdir, repo_folder, v1_folder, v2_folder
 
 
@@ -42,6 +47,9 @@ def test_load_empty_repo(tmpdir):
     main_path = Path(tmpdir.strpath)
     repo_path = main_path.joinpath("repo_demo")
     repo_path.mkdir()
+    version_graph = networkx.DiGraph()
+    version_graph.add_node("v1")
+    networkx.write_gml(version_graph, str(repo_path.joinpath("versions.gml")))
 
     repo_path.joinpath("v1").mkdir()
     info_json = repo_path.joinpath("info.json")
@@ -343,6 +351,10 @@ def test_forward_only(tmpdir):
             },
             file
         )
+
+    version_graph = networkx.DiGraph()
+    version_graph.add_node("v1")
+    networkx.write_gml(version_graph, str(repo_folder.join("versions.gml")))
 
     v2_folder_FA = v2_folder.mkdir("fa")  # folder FA added
 

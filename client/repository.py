@@ -152,7 +152,7 @@ class ClientRepository(BaseRepository):
         repo_info['config']['url'] = url
         repo_info['config']['current_version'] = repo_info['config']['latest_version']
 
-        with open(str(sub_dir / Path('info.json')), 'w+') as info_file:
+        with sub_dir.joinpath('info.json').open('w+') as info_file:
             json.dump(repo_info, info_file)
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -161,5 +161,9 @@ class ClientRepository(BaseRepository):
             await download_service.download(urljoin(url, '/latest.tar.xz'), tmpfilepath)
             unpack_archive(tmpfilepath, path, 'xztar')
             logger.info("Downloaded and unpacked latest.tar.xz")
+
+        await download_service.download(urljoin(url, '/versions.gml'), sub_dir.joinpath("versions.gml"))
+
+
 
         return ClientRepository(path, download_service)

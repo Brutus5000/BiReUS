@@ -40,7 +40,9 @@ async def get_latest_version(mocker, downloader) -> ClientRepository:
     global client_repo
 
     server_latest = server_path.joinpath("repo_demo", "latest.tar.xz")
+    version_graph = server_path.joinpath("repo_demo", "versions.gml")
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_latest, path_to))
+    downloader.add_download_action(lambda path_from, path_to: copy_file(version_graph, path_to))
     downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
 
     return await ClientRepository.get_from_url(client_path, "http://localhost:12345", downloader)

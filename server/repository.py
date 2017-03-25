@@ -1,6 +1,8 @@
 import json
 import logging
 
+import networkx
+
 from server import get_subdirectory_names
 from server.compare_task import CompareTask
 from shared import *
@@ -99,6 +101,10 @@ class ServerRepository(BaseRepository):
             }
 
             json.dump(info_json, file)
+
+        version_graph = networkx.DiGraph()
+        version_graph.add_node(first_version)
+        networkx.write_gml(version_graph, str(path.joinpath("versions.gml")))
 
         logger.info("Repository %s created, copy your content into %s and run update", name, str(version_path))
 

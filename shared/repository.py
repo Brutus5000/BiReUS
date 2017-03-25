@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 from typing import List
 
+import networkx
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,6 +24,8 @@ class BaseRepository(abc.ABC):
         logger.debug("Initialize Repository @ %s ", absolute_path)
         with self.info_path.open("r") as file:
             self._metadata = json.load(file)
+
+        self.version_graph = networkx.read_gml(str(self.version_graph_path))
 
     @property
     @abc.abstractmethod
