@@ -25,8 +25,6 @@ class ClientRepository(BaseRepository):
         else:
             self._download_service = download_service
 
-        self._internal_path = Path('.bireus')
-
     @property
     def info_path(self) -> Path:
         return self._absolute_path.joinpath('.bireus', 'info.json')
@@ -34,6 +32,9 @@ class ClientRepository(BaseRepository):
     @property
     def version_graph_path(self) -> Path:
         return self._absolute_path.joinpath('.bireus', 'versions.gml')
+
+    def get_patch_path(self, version_from: str, version_to: str) -> Path:
+        return self._absolute_path.joinpath('.bireus', '%s_to_%s.tar.xz' % (version_from, version_to))
 
     @property
     def current_version(self) -> str:
@@ -53,7 +54,7 @@ class ClientRepository(BaseRepository):
         try:
             version = await self.latest_from_remote()
             self._metadata['latest_version'] = version
-            with open(str(self._absolute_path / self._internal_path / Path('info.json')), 'w') as info_file:
+            with self.info_path.open('w') as info_file:
                 json.dump(self._metadata, info_file)
         except:
             logger.warning("Remote repository unreachable, use local instead")
@@ -72,8 +73,7 @@ class ClientRepository(BaseRepository):
 
         logger.info("Checking out version %s", version)
 
-        delta_file = self._absolute_path / self._internal_path / Path(
-            '%s_to_%s.tar.xz' % (self.current_version, version))  # type: Path
+        delta_file = self.get_patch_path(self.current_version, version)
         if not delta_file.exists():
             logger.info("Download deltafile %s_2_%s from server", self.current_version, version)
             await self._download_delta_to(version)
@@ -84,7 +84,7 @@ class ClientRepository(BaseRepository):
 
         # set the new version in the info.json
         self._metadata['config']['current_version'] = version
-        with open(str(self._absolute_path / self._internal_path / Path('info.json')), 'w') as info_file:
+        with self.info_path.open('w') as info_file:
             json.dump(self._metadata, info_file)
 
         logger.info('Version %s is now checked out', version)
@@ -102,8 +102,7 @@ class ClientRepository(BaseRepository):
 
     async def _download_delta_to(self, target_version: str) -> None:
         delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (self.current_version, target_version))
-        delta_dest = self._absolute_path / self._internal_path / Path(
-            '%s_to_%s.tar.xz' % (self.current_version, target_version))
+        delta_dest = self.get_patch_path(self.current_version, target_version)
 
         try:
             await self._download_service.download(delta_source, delta_dest)
@@ -113,8 +112,7 @@ class ClientRepository(BaseRepository):
 
     async def _apply_patch(self, target_version) -> None:
         patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + target_version).name)
-        patch_file = self._absolute_path / self._internal_path / Path(
-            '%s_to_%s.tar.xz' % (self.current_version, target_version))
+        patch_file = self.get_patch_path(self.current_version, target_version)
 
         unpack_archive(patch_file, patch_dir, 'xztar')
 

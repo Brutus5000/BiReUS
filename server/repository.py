@@ -24,7 +24,7 @@ class ServerRepository(BaseRepository):
         return self._absolute_path.joinpath('versions.gml')
 
     def update(self) -> None:
-        if not self._absolute_path.joinpath('info.json').exists():
+        if not self.info_path.exists():
             logger.error("Repository %s is missing info.json - skipping repo", self.name)
             return
 
@@ -81,7 +81,7 @@ class ServerRepository(BaseRepository):
         for v in self.versions:
             info_json["versions"].append(v)
 
-        with self._absolute_path.joinpath("info.json").open("w+") as file:
+        with self.info_path.open("w+") as file:
             json.dump(info_json, file)
 
     @classmethod
