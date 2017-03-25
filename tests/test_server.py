@@ -32,7 +32,6 @@ def empty_repo_with_2_version(tmpdir):
                     "latest_version": "v1",
                     "strategy": "inst-bi"
                 },
-                "versions": ["v1"]
             },
             file
         )
@@ -64,7 +63,6 @@ def test_load_empty_repo(tmpdir):
                     "latest_version": "v1",
                     "strategy": "inst-bi"
                 },
-                "versions": ["v1"]
             },
             file
         )
@@ -73,7 +71,8 @@ def test_load_empty_repo(tmpdir):
     assert repo_manager.repositories[0].name == "repo_demo"
     assert repo_manager.repositories[0].first_version == "v1"
     assert repo_manager.repositories[0].latest_version == "v1"
-    assert repo_manager.repositories[0].versions[0] == "v1"
+    assert len(list(repo_manager.repositories[0].version_graph)) == 1
+    assert list(repo_manager.repositories[0].version_graph)[0] == "v1"
 
 
 def test_invalid_repo_folder(tmpdir):
@@ -348,7 +347,6 @@ def test_forward_only(tmpdir):
                     "latest_version": "v1",
                     "strategy": "inst-fo"
                 },
-                "versions": ["v1"]
             },
             file
         )
@@ -389,14 +387,17 @@ def test_create_repository(tmpdir):
     assert path.joinpath("new_repo", "1.0.0").exists()
     assert info_json["config"]["name"] == "new_repo"
     assert info_json["config"]["latest_version"] == "1.0.0"
-    assert info_json["config"]["strategy"] == "bi"
-    assert len(info_json["versions"]) == 0
+    assert info_json["config"]["strategy"] == "inst-bi"
+
+    version_graph_path = path.joinpath("new_repo", "versions.gml")
+    version_graph = networkx.read_gml(str(version_graph_path))
+    assert len(list(version_graph)) == 1
 
 
 def test_create_repository_2(tmpdir):
     path = Path(tmpdir.strpath)
     repo_manager = RepositoryManager(path)
-    repo_manager.create("new_repo", "v1", "fo")
+    repo_manager.create("new_repo", "v1", "inc-fo")
 
     with path.joinpath("new_repo", "info.json").open("r") as file:
         info_json = json.load(file)
@@ -404,5 +405,8 @@ def test_create_repository_2(tmpdir):
     assert path.joinpath("new_repo", "v1").exists()
     assert info_json["config"]["name"] == "new_repo"
     assert info_json["config"]["latest_version"] == "v1"
-    assert info_json["config"]["strategy"] == "fo"
-    assert len(info_json["versions"]) == 0
+    assert info_json["config"]["strategy"] == "inc-fo"
+
+    version_graph_path = path.joinpath("new_repo", "versions.gml")
+    version_graph = networkx.read_gml(str(version_graph_path))
+    assert len(list(version_graph)) == 1

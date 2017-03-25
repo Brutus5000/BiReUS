@@ -33,7 +33,7 @@ def test_incremental_bi_3_to_4(incremental_bi_three_version_graph):
     version_graph = incremental_bi_three_version_graph  # type: networkx.Graph
 
     strategy = IncrementalStrategy()
-    patches = strategy.get_required_patches(version_graph, "v3", "v4")
+    patches = strategy.add_version(version_graph, "v3", "v4")
 
     assert len(patches) == 2
     assert patches[0][0] == "v3"
@@ -53,7 +53,7 @@ def test_instant_bi_3_to_4(incremental_bi_three_version_graph):
     version_graph = incremental_bi_three_version_graph  # type: networkx.Graph
 
     strategy = InstantStrategy()
-    patches = strategy.get_required_patches(version_graph, "v3", "v4")
+    patches = strategy.add_version(version_graph, "v3", "v4")
 
     assert len(patches) == 6
 
@@ -69,7 +69,7 @@ def test_incremental_uni_3_to_4(incremental_uni_three_version_graph):
     version_graph = incremental_uni_three_version_graph  # type: networkx.Graph
 
     strategy = IncrementalStrategy(False)
-    patches = strategy.get_required_patches(version_graph, "v3", "v4")
+    patches = strategy.add_version(version_graph, "v3", "v4")
 
     assert len(patches) == 1
     assert patches[0][0] == "v3"
@@ -87,7 +87,7 @@ def test_instant_uni_3_to_4(incremental_uni_three_version_graph):
     version_graph = incremental_uni_three_version_graph  # type: networkx.Graph
 
     strategy = InstantStrategy(False)
-    patches = strategy.get_required_patches(version_graph, "v3", "v4")
+    patches = strategy.add_version(version_graph, "v3", "v4")
 
     assert len(patches) == 3
 

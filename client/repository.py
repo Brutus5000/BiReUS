@@ -4,6 +4,8 @@ import logging
 import tempfile
 from urllib.parse import urljoin
 
+import networkx
+
 from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
 from client.patch_task import PatchTask
 from shared import *
@@ -45,22 +47,24 @@ class ClientRepository(BaseRepository):
     def url(self) -> str:
         return self._metadata['config']['url']
 
-    async def latest_from_remote(self) -> str:
-        content = await self._download_service.read(urljoin(self.url, '/info.json'))
-        repo_info = json.loads(content.decode('utf-8'))
-        logger.info('Latest version in remote repository is ´%s´', repo_info['latest_version'])
-        return repo_info['config']['latest_version']
-
     async def checkout_latest(self) -> None:
         try:
-            version = await self.latest_from_remote()
-            self._metadata['latest_version'] = version
-            with self.info_path.open('w') as info_file:
-                json.dump(self._metadata, info_file)
+            await self._update_repo_info()
         except DownloadError:
             logger.warning("Remote repository unreachable, use local instead")
 
         await self.checkout_version(self.latest_version)
+
+    async def _update_repo_info(self) -> None:
+        info_json = await self._download_service.read(urljoin(self.url, '/info.json'))
+        info_json = json.loads(info_json.decode())
+
+        if info_json['config']['latest_version'] != self.latest_version:
+            self._metadata = info_json
+            with self.info_path.open('w') as info_file:
+                json.dump(self._metadata, info_file)
+            await self._download_service.download(urljoin(self.url, '/versions.gml'), self.version_graph_path)
+            self.version_graph = networkx.read_gml(str(self.version_graph_path))
 
     async def checkout_version(self, version: str) -> None:
         if self.current_version == version:
@@ -73,14 +77,26 @@ class ClientRepository(BaseRepository):
 
         logger.info("Checking out version %s", version)
 
-        delta_file = self.get_patch_path(self.current_version, version)
-        if not delta_file.exists():
-            logger.info("Download deltafile %s_2_%s from server", self.current_version, version)
-            await self._download_delta_to(version)
-        else:
-            logger.info("Deltafile %s_2_%s already on disk", self.current_version, version)
+        try:
+            patch_path = networkx.shortest_path(self.version_graph, self.current_version, version)
+        except networkx.NetworkXNoPath:
+            logger.error("No valid patch path from %s to %s" % (self.current_version, version))
+            raise CheckoutError("No valid patch path from %s to %s" % (self.current_version, version))
 
-        await self._apply_patch(version)
+        i = 1
+        while i < len(patch_path):
+            version_from = patch_path[i - 1]
+            version_to = patch_path[i]
+
+            delta_file = self.get_patch_path(version_from, version_to)
+            if not delta_file.exists():
+                logger.info("Download deltafile %s_2_%s from server", version_from, version_to)
+                await self._download_patch(version_from, version_to)
+            else:
+                logger.info("Deltafile %s_2_%s already on disk", version_from, version_to)
+
+            await self._apply_patch(version_from, version_to)
+            i += 1
 
         # set the new version in the info.json
         self._metadata['config']['current_version'] = version
@@ -90,19 +106,15 @@ class ClientRepository(BaseRepository):
         logger.info('Version %s is now checked out', version)
 
     async def _check_version_exists(self, target_version: str) -> bool:
-        if target_version in self.versions:
+        if self.has_version(target_version):
             return True
         else:
-            try:
-                content = await self._download_service.read(urljoin(self.url, '/info.json'))
-                self._metadata = json.loads(content.decode('utf-8'))
-                return target_version in self.versions
-            except DownloadError:
-                return False
+            await self._update_repo_info()
+            return self.has_version(target_version)
 
-    async def _download_delta_to(self, target_version: str) -> None:
-        delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (self.current_version, target_version))
-        delta_dest = self.get_patch_path(self.current_version, target_version)
+    async def _download_patch(self, version_from: str, version_to: str) -> None:
+        delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (version_from, version_to))
+        delta_dest = self.get_patch_path(version_from, version_to)
 
         try:
             await self._download_service.download(delta_source, delta_dest)
@@ -110,9 +122,9 @@ class ClientRepository(BaseRepository):
             logger.error("Downloading patch-file failed @ %s", delta_source)
             raise
 
-    async def _apply_patch(self, target_version) -> None:
-        patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + target_version).name)
-        patch_file = self.get_patch_path(self.current_version, target_version)
+    async def _apply_patch(self, version_from: str, version_to: str) -> None:
+        patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + version_to).name)
+        patch_file = self.get_patch_path(version_from, version_to)
 
         unpack_archive(patch_file, patch_dir, 'xztar')
 

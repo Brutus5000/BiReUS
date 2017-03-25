@@ -44,17 +44,21 @@ class ServerRepository(BaseRepository):
 
         # check for new versions
         for version_dir in version_list:
-            if version_dir not in self.versions:
+            if not self.has_version(version_dir):
+                new_versions = True
                 logger.info("new version: %s", version_dir)
                 self.add_version(version_dir)
 
+        if new_versions:
+            networkx.write_gml(self.version_graph, str(self.version_graph_path))
+
     def add_version(self, new_version: str) -> None:
-        logger.debug("existing versions: %s", self.versions)
+        logger.debug("existing versions: %s", list(self.version_graph))
 
         logger.info("patching strategy: %s", self.strategy)
 
         strategy = patching_strategies[self.strategy]  # type: AbstractStrategy
-        patch_paths = strategy.get_required_patches(self.version_graph, self.latest_version, new_version)
+        patch_paths = strategy.add_version(self.version_graph, self.latest_version, new_version)
 
         for patch in patch_paths:
             version_from = patch[0]
@@ -63,7 +67,6 @@ class ServerRepository(BaseRepository):
             CompareTask(self._absolute_path, self.name, version_from, version_to).generate_diff()
 
         logger.debug('append %s to known versions', new_version)
-        self.versions.append(new_version)
         self._save_info_json()
 
     def cleanup(self) -> None:
@@ -78,11 +81,7 @@ class ServerRepository(BaseRepository):
                 "latest_version": self.latest_version,
                 "strategy": self.strategy
             },
-            "versions": []
         }
-
-        for v in self.versions:
-            info_json["versions"].append(v)
 
         with self.info_path.open("w+") as file:
             json.dump(info_json, file)
@@ -100,7 +99,6 @@ class ServerRepository(BaseRepository):
                     "latest_version": first_version,
                     "strategy": strategy
                 },
-                "versions": []
             }
 
             json.dump(info_json, file)

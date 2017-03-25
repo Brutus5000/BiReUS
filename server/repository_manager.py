@@ -40,7 +40,7 @@ class RepositoryManager(object):
 
         logger.info('full_update finished')
 
-    def create(self, name: str, first_version: str = "1.0.0", strategy="bi") -> ServerRepository:
+    def create(self, name: str, first_version: str = "1.0.0", strategy="inst-bi") -> ServerRepository:
         """
         Creates a new repository
         :param name: name of repository

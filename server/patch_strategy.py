@@ -11,7 +11,7 @@ class AbstractStrategy(abc.ABC):
     """
 
     @abc.abstractclassmethod
-    def get_required_patches(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
+    def add_version(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
         """
         Calculates which patches need to be generated
         :param version_graph: graph of all versions - Attention! gets manipulated!
@@ -26,7 +26,7 @@ class IncrementalStrategy(AbstractStrategy):
     def __init__(self, bidirectional: bool = True):
         self.bidirectional = bidirectional
 
-    def get_required_patches(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
+    def add_version(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
         required_patches = [(last_version, new_version)]
 
         version_graph.add_node(new_version)
@@ -43,7 +43,7 @@ class InstantStrategy(AbstractStrategy):
     def __init__(self, bidirectional: bool = True):
         self.bidirectional = bidirectional
 
-    def get_required_patches(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
+    def add_version(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
         required_patches = []
 
         versions = list(version_graph)

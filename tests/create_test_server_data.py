@@ -466,7 +466,6 @@ def create_test_server_data(path: Path, strategy: str):
                     "latest_version": "v2",
                     "strategy": strategy
                 },
-                "versions": ["v1"]
             },
             info_file
         )

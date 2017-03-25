@@ -3,7 +3,6 @@ import abc
 import json
 import logging
 from pathlib import Path
-from typing import List
 
 import networkx
 
@@ -26,7 +25,7 @@ class BaseRepository(abc.ABC):
         with self.info_path.open("r") as file:
             self._metadata = json.load(file)
 
-        self.version_graph = networkx.read_gml(str(self.version_graph_path))
+        self.version_graph = networkx.read_gml(str(self.version_graph_path))  # type: networkx.Graph
 
     @property
     @abc.abstractmethod
@@ -50,9 +49,8 @@ class BaseRepository(abc.ABC):
     def latest_version(self) -> str:
         return self._metadata['config']['latest_version']
 
-    @property
-    def versions(self) -> List[str]:
-        return self._metadata['versions']
+    def has_version(self, name: str):
+        return self.version_graph.has_node(name)
 
     @property
     def strategy(self) -> str:
