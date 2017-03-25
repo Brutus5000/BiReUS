@@ -1,6 +1,14 @@
 from pathlib import Path
 from typing import List
 
+from server.patch_strategy import IncrementalStrategy, InstantStrategy
+
+patching_strategies = dict()
+patching_strategies["inc-bi"] = IncrementalStrategy()
+patching_strategies["inc-fo"] = IncrementalStrategy(bidirectional=False)
+patching_strategies["inst-bi"] = InstantStrategy()
+patching_strategies["inst-fo"] = InstantStrategy(bidirectional=False)
+
 
 def get_subdirectory_names(path: Path) -> List[str]:
     return [d.name for d in path.iterdir() if d.is_dir() and d.name != '.delta_to' and d.name != '__patches__']
