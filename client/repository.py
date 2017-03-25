@@ -38,7 +38,7 @@ class ClientRepository(BaseRepository):
 
     @property
     def current_version(self) -> str:
-        return self._metadata ['config']['current_version']
+        return self._metadata['config']['current_version']
 
     @property
     def url(self) -> str:
@@ -56,7 +56,7 @@ class ClientRepository(BaseRepository):
             self._metadata['latest_version'] = version
             with self.info_path.open('w') as info_file:
                 json.dump(self._metadata, info_file)
-        except:
+        except DownloadError:
             logger.warning("Remote repository unreachable, use local instead")
             version = self.latest_version
 
@@ -122,7 +122,8 @@ class ClientRepository(BaseRepository):
             logger.error("Invalid diff_head - only top directory allowed")
             raise Exception("Invalid diff_head - only top directory allowed")
 
-        await PatchTask(self._download_service, self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head, diff_head.items[0]).patch()
+        await PatchTask(self._download_service, self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head,
+                        diff_head.items[0]).patch()
 
     @classmethod
     async def get_from_url(cls, path: Path, url: str,
@@ -161,7 +162,5 @@ class ClientRepository(BaseRepository):
             logger.info("Downloaded and unpacked latest.tar.xz")
 
         await download_service.download(urljoin(url, '/versions.gml'), sub_dir.joinpath("versions.gml"))
-
-
 
         return ClientRepository(path, download_service)

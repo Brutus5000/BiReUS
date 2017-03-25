@@ -1,6 +1,6 @@
-import logging
 import abc
 import atexit
+import logging
 from pathlib import Path
 
 import aiohttp
@@ -15,16 +15,37 @@ class DownloadError(Exception):
 
 
 class AbstractDownloadService(abc.ABC):
+    """
+    Offers functionality to download or read files from a remote url.
+    Inherit from this class if you want to have more control of the process.
+    """
+
     @abc.abstractmethod
     async def download(self, url: str, path: Path) -> None:
+        """
+        Downloads the file at the given url to given path.
+        Needs to throw DownloadError if anything bad happens
+        :param url: url to the file
+        :param path: destination of the file
+        """
         pass
 
     @abc.abstractmethod
     async def read(self, url: str) -> bytes:
+        """
+        Reads a file from a remote url
+        Needs to throw DownloadError if anything bad happens
+        :param url: url to the file
+        :return: bytes of file from url
+        """
         pass
 
 
 class BasicDownloadService(AbstractDownloadService):
+    """
+    A simple async download service
+    """
+
     def __init__(self):
         self._session = None
 
