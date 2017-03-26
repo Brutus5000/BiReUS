@@ -410,3 +410,22 @@ def test_create_repository_2(tmpdir):
     version_graph_path = path.joinpath("new_repo", "versions.gml")
     version_graph = networkx.read_gml(str(version_graph_path))
     assert len(list(version_graph)) == 1
+
+
+def test_update_3_repos(empty_repo_with_2_version):
+    tmpdir, repo_folder, v1_folder, v2_folder = empty_repo_with_2_version
+
+    v3_folder = repo_folder.mkdir("v3")
+
+    repo_manager = RepositoryManager(Path(tmpdir.strpath))
+    repo_manager.full_update()
+
+    with Path(repo_folder.strpath, "info.json").open("r") as file:
+        info_json = json.load(file)
+
+    assert info_json['config']['latest_version'] == "v3"
+
+    assert Path(repo_folder.strpath, "__patches__", "v1_to_v3.tar.xz").exists()
+    assert Path(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz").exists()
+    assert Path(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz").exists()
+    assert Path(repo_folder.strpath, "__patches__", "v3_to_v1.tar.xz").exists()

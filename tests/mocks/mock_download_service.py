@@ -19,14 +19,18 @@ class MockDownloadService(AbstractDownloadService):
         else:
             self._read_function = [read_function]
 
+        self.urls_called = []  # type: List[str]
+
     def add_download_action(self, download_function) -> None:
         self._download_function.append(download_function)
 
     async def download(self, url: str, path: Path) -> None:
+        self.urls_called.append(url)
         self._download_function.pop(0)(url, path)
 
     def add_read_action(self, read_function) -> None:
         self._read_function.append(read_function)
 
     async def read(self, url: str) -> bytes:
+        self.urls_called.append(url)
         return self._read_function.pop(0)(url)

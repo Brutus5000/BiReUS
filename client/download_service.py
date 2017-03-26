@@ -50,7 +50,7 @@ class BasicDownloadService(AbstractDownloadService):
     def __init__(self):
         self._session = None
 
-    async def get_session(self):
+    async def get_session(self) -> aiohttp.ClientSession:
         if self._session is None:
             self._session = aiohttp.ClientSession()
             atexit.register(self._session.close)
@@ -61,6 +61,7 @@ class BasicDownloadService(AbstractDownloadService):
 
         try:
             session = await self.get_session()
+            logger.debug("Starting download from %s to %s", url, str(path))
             async with session.get(url) as response:
                 with path.open(mode="wb") as file:
                     while True:
@@ -74,6 +75,7 @@ class BasicDownloadService(AbstractDownloadService):
     async def read(self, url: str) -> bytes:
         try:
             session = await self.get_session()
+            logger.debug("Starting download from %s to memory", url)
             async with session.get(url) as response:
                 return await response.read()
         except Exception as e:

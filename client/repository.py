@@ -2,14 +2,12 @@
 import json
 import logging
 import tempfile
-from urllib.parse import urljoin
 
 import networkx
 
 from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
 from client.patch_task import PatchTask
 from shared import *
-from shared.diff_head import DiffHead
 from shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -24,9 +22,12 @@ class ClientRepository(BaseRepository):
         super().__init__(absolute_path)
 
         if download_service is None:
+            logger.debug("Using BasicDownloadService")
             self._download_service = BasicDownloadService()
         else:
             self._download_service = download_service
+
+        logger.info("%s initialized, current version: %s", self.name, self.current_version)
 
     @property
     def info_path(self) -> Path:
@@ -56,14 +57,14 @@ class ClientRepository(BaseRepository):
         await self.checkout_version(self.latest_version)
 
     async def _update_repo_info(self) -> None:
-        info_json = await self._download_service.read(urljoin(self.url, '/info.json'))
+        info_json = await self._download_service.read(self.url + '/info.json')
         info_json = json.loads(info_json.decode())
 
         if info_json['config']['latest_version'] != self.latest_version:
             self._metadata = info_json
             with self.info_path.open('w') as info_file:
                 json.dump(self._metadata, info_file)
-            await self._download_service.download(urljoin(self.url, '/versions.gml'), self.version_graph_path)
+            await self._download_service.download(self.url + '/versions.gml', self.version_graph_path)
             self.version_graph = networkx.read_gml(str(self.version_graph_path))
 
     async def checkout_version(self, version: str) -> None:
@@ -75,7 +76,7 @@ class ClientRepository(BaseRepository):
             logger.error("Version `%s` is not listed on server", version)
             raise CheckoutError("Version `%s` is not listed on server", version)
 
-        logger.info("Checking out version %s", version)
+        logger.info("Checking out version %s (current version %s)", version, self.current_version)
 
         try:
             patch_path = networkx.shortest_path(self.version_graph, self.current_version, version)
@@ -90,10 +91,10 @@ class ClientRepository(BaseRepository):
 
             delta_file = self.get_patch_path(version_from, version_to)
             if not delta_file.exists():
-                logger.info("Download deltafile %s_2_%s from server", version_from, version_to)
+                logger.info("Download deltafile %s_to_%s from server", version_from, version_to)
                 await self._download_patch(version_from, version_to)
             else:
-                logger.info("Deltafile %s_2_%s already on disk", version_from, version_to)
+                logger.info("Deltafile %s_to_%s already on disk", version_from, version_to)
 
             await self._apply_patch(version_from, version_to)
             i += 1
@@ -113,7 +114,7 @@ class ClientRepository(BaseRepository):
             return self.has_version(target_version)
 
     async def _download_patch(self, version_from: str, version_to: str) -> None:
-        delta_source = urljoin(self.url, '/__patches__/%s_to_%s.tar.xz' % (version_from, version_to))
+        delta_source = self.url + '/__patches__/%s_to_%s.tar.xz' % (version_from, version_to)
         delta_dest = self.get_patch_path(version_from, version_to)
 
         try:
@@ -123,19 +124,9 @@ class ClientRepository(BaseRepository):
             raise
 
     async def _apply_patch(self, version_from: str, version_to: str) -> None:
-        patch_dir = Path(tempfile.TemporaryDirectory(prefix="bireus_", suffix="_" + version_to).name)
-        patch_file = self.get_patch_path(version_from, version_to)
-
-        unpack_archive(patch_file, patch_dir, 'xztar')
-
-        diff_head = DiffHead.load_json_file(patch_dir.joinpath('.bireus'))
-
-        if len(diff_head.items) == 0 or len(diff_head.items) > 1:
-            logger.error("Invalid diff_head - only top directory allowed")
-            raise Exception("Invalid diff_head - only top directory allowed")
-
-        await PatchTask(self._download_service, self.url, self._absolute_path, Path('.'), Path(patch_dir), diff_head,
-                        diff_head.items[0]).patch()
+        patch_task = PatchTask(self._download_service, self.url, self._absolute_path,
+                               self.get_patch_path(version_from, version_to))
+        await patch_task.run()
 
     @classmethod
     async def get_from_url(cls, path: Path, url: str,
@@ -151,7 +142,9 @@ class ClientRepository(BaseRepository):
             raise
 
         try:
-            content = await download_service.read(urljoin(url, '/info.json'))
+            info_json_url = url + '/info.json'
+            logger.debug("Read info.json from %s", info_json_url)
+            content = await download_service.read(info_json_url)
             repo_info = json.loads(content.decode('utf-8'))
         except DownloadError:
             logger.error("Error while downloading info.json")
@@ -166,13 +159,13 @@ class ClientRepository(BaseRepository):
         with sub_dir.joinpath('info.json').open('w+') as info_file:
             json.dump(repo_info, info_file)
 
+        await download_service.download(url + '/versions.gml', sub_dir.joinpath("versions.gml"))
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
             tmpfilepath = tmppath.joinpath("latest.tar.xz")
-            await download_service.download(urljoin(url, '/latest.tar.xz'), tmpfilepath)
+            await download_service.download(url + '/latest.tar.xz', tmpfilepath)
             unpack_archive(tmpfilepath, path, 'xztar')
             logger.info("Downloaded and unpacked latest.tar.xz")
-
-        await download_service.download(urljoin(url, '/versions.gml'), sub_dir.joinpath("versions.gml"))
 
         return ClientRepository(path, download_service)

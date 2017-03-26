@@ -14,6 +14,16 @@ class AbstractStrategy(abc.ABC):
     Abstract strategy class that determines, which patches need to be created on a new version
     """
 
+    def new_repo(self, first_version: str) -> Graph:
+        """
+        Creates a graph for a new repo with a first version
+        Override this method if the strategy requires a certain setup
+        :return: valid graph
+        """
+        version_graph = networkx.DiGraph()
+        version_graph.add_node(first_version)
+        return version_graph
+
     @abc.abstractclassmethod
     def add_version(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
         """
@@ -65,7 +75,7 @@ class InstantStrategy(AbstractStrategy):
 
 
 def is_set(graph_object: object, property: str):
-    return property in graph_object and graph_object[property] == True
+    return property in graph_object and graph_object[property] == "yes"
 
 
 class MajorMinorStrategy(AbstractStrategy):
@@ -73,10 +83,15 @@ class MajorMinorStrategy(AbstractStrategy):
         self.bidirectional = bidirectional
         self.minor_range = minor_range
 
+    def new_repo(self, first_version: str):
+        version_graph = super().new_repo(first_version)
+        version_graph.graph['isMajorMinor'] = "yes"
+        return version_graph
+
     def add_version(self, version_graph: Graph, last_version: str, new_version: str) -> List[Tuple[str, str]]:
         required_patches = []
 
-        if not is_set(version_graph.graph, "is_major_minor"):
+        if not is_set(version_graph.graph, "isMajorMinor"):
             logger.error("version graph is no major/minor graph")
             raise Exception("version graph is no major/minor graph")
 
@@ -89,7 +104,7 @@ class MajorMinorStrategy(AbstractStrategy):
         all_major_versions = []  # all major versions in graph
 
         for version in version_graph:
-            if is_set(version_graph[version], "is_major_version"):
+            if is_set(version_graph.node[version], "isMajorVersion"):
                 all_major_versions.append(version)
 
         new_version_is_major = False
@@ -104,7 +119,7 @@ class MajorMinorStrategy(AbstractStrategy):
             # we need to create patches to all versions in both cases
             patches_required.extend(all_existing_versions)
         else:
-            if is_set(version_graph[last_version], "is_major_version"):
+            if is_set(version_graph.node[last_version], "isMajorVersion"):
                 # first minor version after major version - only last_version and new_version affected
                 patches_required.append(last_version)
             else:
@@ -120,7 +135,8 @@ class MajorMinorStrategy(AbstractStrategy):
 
         version_graph.add_node(new_version)
         if new_version_is_major:
-            version_graph[new_version]["is_major_version"] = True
+            logger.info("new major version: %s", new_version)
+            version_graph.node[new_version]["isMajorVersion"] = "yes"
 
         for version in patches_required:
             version_graph.add_edge(version, new_version)

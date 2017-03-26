@@ -16,18 +16,20 @@ from shared.diff_item import DiffItem
 logger = logging.getLogger(__name__)
 
 class CompareTask(object):
-    def __init__(self, absolute_path: Path, name: str, base: str, target: str):
+    def __init__(self, absolute_path: Path, name: str, base: str, target: str, is_zipdelta: bool = False):
         self._absolute_path = absolute_path
         self.name = name
         self.base = base
         self.target = target
+        self.is_zipdelta = is_zipdelta
 
         self._basepath = absolute_path.joinpath(self.base)  # type: Path
         self._targetpath = absolute_path.joinpath(self.target)  # type: Path
         self._deltapath = absolute_path.joinpath(self.base, '.delta_to', self.target)
 
     def generate_diff(self, write_deltafile: bool = True) -> DiffHead:
-        logger.debug('Generating %s delta `%s` -> `%s`', self.name, self.base, self.target)
+        if not self.is_zipdelta:
+            logger.debug('Generating %s diff `%s` -> `%s`', self.name, self.base, self.target)
 
         self._deltapath.mkdir(parents=True, exist_ok=True)
 
@@ -37,7 +39,10 @@ class CompareTask(object):
 
         top_folder_diff = self._compare_directory(Path(""))
 
-        bireus_head.items.append(top_folder_diff)
+        if not self.is_zipdelta:
+            bireus_head.items.append(top_folder_diff)
+        else:
+            bireus_head.items.extend(top_folder_diff.items)
 
         if write_deltafile:
             with self._deltapath.joinpath('.bireus').open(mode='w+') as diffFile:
@@ -125,9 +130,9 @@ class CompareTask(object):
                 temp = tempfile.TemporaryDirectory(suffix='_dir', prefix='bireus_')  # type: TemporaryDirectory
 
                 temp_abspath = Path(temp.name)
-                temp_basepath = temp_abspath.joinpath(self._basepath.relative_to(self._absolute_path))
-                temp_targetpath = temp_abspath.joinpath(self._targetpath.relative_to(self._absolute_path))
-                temp_deltapath = temp_abspath.joinpath(self._deltapath.relative_to(self._absolute_path))
+                temp_basepath = temp_abspath.joinpath(self.base)
+                temp_targetpath = temp_abspath.joinpath(self.target)
+                temp_deltapath = temp_abspath.joinpath(self.base, ".delta_to", self.target)
 
                 temp_basepath.mkdir(parents=True, exist_ok=True)
                 temp_targetpath.mkdir(parents=True, exist_ok=True)
@@ -140,8 +145,9 @@ class CompareTask(object):
                     targetZip.extractall(str(temp_targetpath))
 
                 logger.debug("zipdelta required for `%s`", file_path)
-                zip_diff = CompareTask(temp_abspath, self.name, self.base, self.target).generate_diff(False)
-                copy_folder(temp_deltapath, self._absolute_path.joinpath(self._deltapath, file_path))
+                zip_diff = CompareTask(temp_abspath, self.name, self.base, self.target, is_zipdelta=True).generate_diff(
+                    False)
+                copy_folder(temp_deltapath, deltapath)
 
                 result_diff.items.extend(zip_diff.items)
             else:

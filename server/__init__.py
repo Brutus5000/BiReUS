@@ -9,7 +9,7 @@ patching_strategies["inc-bi"] = IncrementalStrategy()
 patching_strategies["inc-fo"] = IncrementalStrategy(bidirectional=False)
 patching_strategies["inst-bi"] = InstantStrategy()
 patching_strategies["inst-fo"] = InstantStrategy(bidirectional=False)
-patching_strategies["major-bi"] = MajorMinorStrategy()
+patching_strategies["major-bi"] = MajorMinorStrategy(minor_range=3)
 patching_strategies["major-fo"] = MajorMinorStrategy(bidirectional=False)
 
 

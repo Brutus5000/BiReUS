@@ -28,10 +28,10 @@ def create_test_server_data(path: Path, strategy: str):
             return abs_path
 
     repo_path.mkdir(parents=True)
-    repo_path.joinpath("v1").mkdir()
-    repo_path.joinpath("v2").mkdir()
-    repo_path.joinpath("temp1").mkdir()
-    repo_path.joinpath("temp2").mkdir()
+    repo_path.joinpath("v1", "zip_sub").mkdir(parents=True)
+    repo_path.joinpath("v2", "zip_sub").mkdir(parents=True)
+    repo_path.joinpath("temp1", "subfolder").mkdir(parents=True)
+    repo_path.joinpath("temp2", "subfolder").mkdir(parents=True)
 
     # example-server of unchanged-action
     create_simplefile(repo_path.joinpath("v1"), "unchanged.txt", "This file will be unchanged.")
@@ -449,10 +449,24 @@ def create_test_server_data(path: Path, strategy: str):
     Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. """)
 
     shutil.copy2(str(repo_path.joinpath("temp1", "zip-content-changed.txt")), str(repo_path.joinpath("v1", "changed.txt")))
+    shutil.copy2(str(repo_path.joinpath("temp1", "zip-content-changed.txt")),
+                 str(repo_path.joinpath("temp1", "subfolder", "zip-content-subfolder-changed.txt")))
+
     shutil.copy2(str(repo_path.joinpath("temp2", "zip-content-changed.txt")), str(repo_path.joinpath("v2", "changed.txt")))
+    shutil.copy2(str(repo_path.joinpath("temp2", "zip-content-changed.txt")),
+                 str(repo_path.joinpath("temp2", "subfolder", "zip-content-subfolder-changed.txt")))
 
     shutil.make_archive(str(repo_path.joinpath("v1", "changed")), 'zip', str(repo_path.joinpath("temp1")))
     shutil.make_archive(str(repo_path.joinpath("v2", "changed")), 'zip', str(repo_path.joinpath("temp2")))
+
+    shutil.make_archive(str(repo_path.joinpath("v1", "zip_sub", "changed-subfolder")), 'zip',
+                        str(repo_path.joinpath("temp1")))
+    shutil.make_archive(str(repo_path.joinpath("v2", "zip_sub", "changed-subfolder")), 'zip',
+                        str(repo_path.joinpath("temp2")))
+    shutil.move(str(repo_path.joinpath("v1", "zip_sub", "changed-subfolder.zip")),
+                str(repo_path.joinpath("v1", "zip_sub", "changed-subfolder.test")))
+    shutil.move(str(repo_path.joinpath("v2", "zip_sub", "changed-subfolder.zip")),
+                str(repo_path.joinpath("v2", "zip_sub", "changed-subfolder.test")))
 
     shutil.rmtree(str(repo_path.joinpath("temp1")))
     shutil.rmtree(str(repo_path.joinpath("temp2")))

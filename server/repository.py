@@ -36,18 +36,22 @@ class ServerRepository(BaseRepository):
 
         version_list.sort()
         logger.info('%s is the latest version', version_list[-1])
-        logger.debug('generate latest.tar.xz')
+        logger.info('generate latest.tar.xz')
         make_archive(self._absolute_path.joinpath('latest'), 'xztar',
                      self._absolute_path.joinpath(version_list[-1]))
 
         logger.debug('begin patching')
 
         # check for new versions
+        new_versions = False
         for version_dir in version_list:
             if not self.has_version(version_dir):
                 new_versions = True
                 logger.info("new version: %s", version_dir)
                 self.add_version(version_dir)
+                logger.debug('append %s to known versions', version_dir)
+                self._metadata['config']['latest_version'] = version_dir
+                self._save_info_json()
 
         if new_versions:
             networkx.write_gml(self.version_graph, str(self.version_graph_path))
@@ -59,15 +63,14 @@ class ServerRepository(BaseRepository):
 
         strategy = patching_strategies[self.strategy]  # type: AbstractStrategy
         patch_paths = strategy.add_version(self.version_graph, self.latest_version, new_version)
+        logger.info("%s versions were selected for patching" % len(patch_paths))
+        logger.debug(patch_paths)
 
         for patch in patch_paths:
             version_from = patch[0]
             version_to = patch[1]
-            logger.debug('Generating diffs %s -> %s', version_from, version_to)
+            logger.info('Generating patch for %s -> %s', version_from, version_to)
             CompareTask(self._absolute_path, self.name, version_from, version_to).generate_diff()
-
-        logger.debug('append %s to known versions', new_version)
-        self._save_info_json()
 
     def cleanup(self) -> None:
         logger.debug('Cleanup %s', self.name)
@@ -91,6 +94,9 @@ class ServerRepository(BaseRepository):
         version_path = path.joinpath(first_version)
         version_path.mkdir(parents=True)
 
+        version_graph = patching_strategies[strategy].new_repo(first_version)
+        networkx.write_gml(version_graph, str(path.joinpath("versions.gml")))
+
         with path.joinpath("info.json").open("w+") as file:
             info_json = {
                 "config": {
@@ -102,10 +108,6 @@ class ServerRepository(BaseRepository):
             }
 
             json.dump(info_json, file)
-
-        version_graph = networkx.DiGraph()
-        version_graph.add_node(first_version)
-        networkx.write_gml(version_graph, str(path.joinpath("versions.gml")))
 
         logger.info("Repository %s created, copy your content into %s and run update", name, str(version_path))
 

@@ -107,14 +107,14 @@ def test_major_minor_fail_invalid_graph(incremental_bi_three_version_graph):
     with pytest.raises(Exception):
         patches = strategy.add_version(version_graph, "v3", "v4")
 
-    version_graph.graph["is_major_minor"] = False
+    version_graph.graph["isMajorMinor"] = "no"
     with pytest.raises(Exception):
         patches = strategy.add_version(version_graph, "v3", "v4")
 
 
 def test_major_minor_bi_add_no_major_yet(incremental_bi_three_version_graph):
     version_graph = incremental_bi_three_version_graph  # type: networkx.Graph
-    version_graph.graph["is_major_minor"] = True
+    version_graph.graph["isMajorMinor"] = "yes"
 
     strategy = MajorMinorStrategy(bidirectional=True, minor_range=10)
     patches = strategy.add_version(version_graph, "v3", "v4")
@@ -128,12 +128,12 @@ def test_major_minor_bi_add_no_major_yet(incremental_bi_three_version_graph):
     assert version_graph.has_edge("v4", "v2")
     assert version_graph.has_edge("v4", "v3")
 
-    assert "is_major_version" not in version_graph["v4"]
+    assert "isMajorVersion" not in version_graph.node["v4"]
 
 
 def test_major_minor_uni_add_no_major_yet(incremental_bi_three_version_graph):
     version_graph = incremental_bi_three_version_graph  # type: networkx.Graph
-    version_graph.graph["is_major_minor"] = True
+    version_graph.graph["isMajorMinor"] = "yes"
 
     strategy = MajorMinorStrategy(bidirectional=False, minor_range=10)
     patches = strategy.add_version(version_graph, "v3", "v4")
@@ -147,12 +147,12 @@ def test_major_minor_uni_add_no_major_yet(incremental_bi_three_version_graph):
     assert not version_graph.has_edge("v4", "v2")
     assert not version_graph.has_edge("v4", "v3")
 
-    assert "is_major_version" not in version_graph["v4"]
+    assert "isMajorVersion" not in version_graph.node["v4"]
 
 
 def test_major_minor_bi_add_first_major(incremental_bi_three_version_graph):
     version_graph = incremental_bi_three_version_graph  # type: networkx.Graph
-    version_graph.graph["is_major_minor"] = True
+    version_graph.graph["isMajorMinor"] = "yes"
 
     strategy = MajorMinorStrategy(bidirectional=True, minor_range=4)
     patches = strategy.add_version(version_graph, "v3", "v4")
@@ -166,13 +166,13 @@ def test_major_minor_bi_add_first_major(incremental_bi_three_version_graph):
     assert version_graph.has_edge("v4", "v2")
     assert version_graph.has_edge("v4", "v3")
 
-    assert version_graph["v4"]["is_major_version"]
+    assert version_graph.node["v4"]["isMajorVersion"]
 
 
 def test_major_minor_bi_add_first_after_major(incremental_bi_three_version_graph):
     version_graph = incremental_bi_three_version_graph  # type: networkx.Graph
-    version_graph.graph["is_major_minor"] = True
-    version_graph["v3"]["is_major_version"] = True
+    version_graph.graph["isMajorMinor"] = "yes"
+    version_graph.node["v3"]["isMajorVersion"] = "yes"
 
     strategy = MajorMinorStrategy(bidirectional=True, minor_range=3)
     patches = strategy.add_version(version_graph, "v3", "v4")
@@ -186,12 +186,12 @@ def test_major_minor_bi_add_first_after_major(incremental_bi_three_version_graph
     assert not version_graph.has_edge("v4", "v2")
     assert version_graph.has_edge("v4", "v3")
 
-    assert "is_major_version" not in version_graph["v4"]
+    assert "isMajorVersion" not in version_graph.node["v4"]
 
 
 def test_major_minor_uni_3_success():
     version_graph = networkx.DiGraph()
-    version_graph.graph["is_major_minor"] = True
+    version_graph.graph["isMajorMinor"] = "yes"
 
     version_graph.add_nodes_from(["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11"])
     version_graph.add_edge("v1", "v2")
@@ -215,9 +215,9 @@ def test_major_minor_uni_3_success():
 
     version_graph.add_edge("v3", "v9")
 
-    version_graph["v3"]["is_major_version"] = True
-    version_graph["v6"]["is_major_version"] = True
-    version_graph["v9"]["is_major_version"] = True
+    version_graph.node["v3"]["isMajorVersion"] = "yes"
+    version_graph.node["v6"]["isMajorVersion"] = "yes"
+    version_graph.node["v9"]["isMajorVersion"] = "yes"
 
     strategy = MajorMinorStrategy(bidirectional=False, minor_range=3)
     patches = strategy.add_version(version_graph, "v11", "v12")
