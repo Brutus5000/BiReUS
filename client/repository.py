@@ -5,10 +5,10 @@ import tempfile
 
 import networkx
 
+from client import patch_tasks
 from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
-from client.patch_task import PatchTask
 from shared import *
-from shared.repository import BaseRepository
+from shared.repository import BaseRepository, ProtocolException
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,10 @@ class CheckoutError(Exception):
 class ClientRepository(BaseRepository):
     def __init__(self, absolute_path: Path, download_service: AbstractDownloadService = None):
         super().__init__(absolute_path)
+
+        if self.protocol not in patch_tasks:
+            logger.error("server does not support repository protocol version %s", self.protocol)
+            raise ProtocolException("server does not support repository protocol version %s" % self.protocol)
 
         if download_service is None:
             logger.debug("Using BasicDownloadService")
@@ -42,11 +46,11 @@ class ClientRepository(BaseRepository):
 
     @property
     def current_version(self) -> str:
-        return self._metadata['config']['current_version']
+        return self._metadata['current_version']
 
     @property
     def url(self) -> str:
-        return self._metadata['config']['url']
+        return self._metadata['url']
 
     async def checkout_latest(self) -> None:
         try:
@@ -60,7 +64,7 @@ class ClientRepository(BaseRepository):
         info_json = await self._download_service.read(self.url + '/info.json')
         info_json = json.loads(info_json.decode())
 
-        if info_json['config']['latest_version'] != self.latest_version:
+        if info_json['latest_version'] != self.latest_version:
             self._metadata = info_json
             with self.info_path.open('w') as info_file:
                 json.dump(self._metadata, info_file)
@@ -100,7 +104,7 @@ class ClientRepository(BaseRepository):
             i += 1
 
         # set the new version in the info.json
-        self._metadata['config']['current_version'] = version
+        self._metadata['current_version'] = version
         with self.info_path.open('w') as info_file:
             json.dump(self._metadata, info_file)
 
@@ -124,8 +128,8 @@ class ClientRepository(BaseRepository):
             raise
 
     async def _apply_patch(self, version_from: str, version_to: str) -> None:
-        patch_task = PatchTask(self._download_service, self.url, self._absolute_path,
-                               self.get_patch_path(version_from, version_to))
+        patch_task = patch_tasks[self.protocol](self._download_service, self.url, self._absolute_path,
+                                                self.get_patch_path(version_from, version_to))
         await patch_task.run()
 
     @classmethod
@@ -153,8 +157,8 @@ class ClientRepository(BaseRepository):
         sub_dir = path.joinpath('.bireus')
         sub_dir.mkdir()
 
-        repo_info['config']['url'] = url
-        repo_info['config']['current_version'] = repo_info['config']['latest_version']
+        repo_info['url'] = url
+        repo_info['current_version'] = repo_info['latest_version']
 
         with sub_dir.joinpath('info.json').open('w+') as info_file:
             json.dump(repo_info, info_file)

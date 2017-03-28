@@ -1,4 +1,5 @@
 # coding=utf-8
+import abc
 import logging
 import tempfile
 
@@ -21,7 +22,7 @@ class CrcMismatchError(Exception):
         self.actualCrc = actual_crc
 
 
-class PatchTask(object):
+class AbstractPatchTask(abc.ABC):
     def __init__(self, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
                  patch_file: Path):
         self._download_service = download_service
@@ -36,6 +37,13 @@ class PatchTask(object):
         unpack_archive(self._patch_file, tempdir.name)
 
         diff_head = DiffHead.load_json_file(Path(tempdir.name).joinpath('.bireus'))
+
+        if diff_head.protocol != self.get_version():
+            logger.error(".bireus protocol version %s doesn't match patcher task version %s", diff_head.protocol,
+                         self.get_version())
+            raise Exception(".bireus protocol version %s doesn't match patcher task version %s"
+                            % (diff_head.protocol, self.get_version()))
+
         self._target_version = diff_head.target_version
 
         # begin the patching recursion
@@ -43,6 +51,34 @@ class PatchTask(object):
         await self.patch(diff_head.items[0], self._repo_path, Path(tempdir.name), False)
 
         tempdir.cleanup()
+
+    @abc.abstractclassmethod
+    def get_version(cls) -> int:
+        pass
+
+    @abc.abstractclassmethod
+    def create(cls, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
+               patch_file: Path) -> 'AbstractPatchTask':
+        """
+        Abstract factory function for dynamic patcher initialization
+        same params as in constructor!
+        """
+        pass
+
+    @abc.abstractmethod
+    async def patch(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool = False) -> None:
+        pass
+
+
+class PatchTaskV1(AbstractPatchTask):
+    @classmethod
+    def get_version(cls) -> int:
+        return 1
+
+    @classmethod
+    def create(cls, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
+               patch_file: Path):
+        return PatchTaskV1(download_service, repository_url, repo_path, patch_file)
 
     async def patch(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool = False) -> None:
         for item in diff.items:

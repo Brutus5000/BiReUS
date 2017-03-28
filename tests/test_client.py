@@ -1,13 +1,16 @@
 # coding=utf-8
+import json
 import logging
 import sys
 
+import networkx
 import pytest
 
 from client.download_service import DownloadError
 from client.repository import ClientRepository, CheckoutError
 from server.repository_manager import RepositoryManager
 from shared import *
+from shared.repository import ProtocolException
 from tests.create_test_server_data import create_test_server_data
 from tests.mocks.mock_download_service import MockDownloadService
 
@@ -200,3 +203,28 @@ async def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_ser
                          server_path.joinpath("repo_demo", "v1", "unchanged.txt"))
     assert compare_files(client_path.joinpath("removed_folder", "obsolete.txt"),
                          server_path.joinpath("repo_demo", "v1", "removed_folder", "obsolete.txt"))
+
+
+def test_protocol_exception(tmpdir):
+    repo_folder = tmpdir.mkdir("repo_demo")
+    bireus_folder = repo_folder.mkdir(".bireus")
+
+    info_json = bireus_folder.join("info.json")
+    with info_json.open("w") as file:
+        json.dump(
+            {
+                "name": "repo_demo",
+                "first_version": "v1",
+                "latest_version": "v1",
+                "strategy": "inst-bi",
+                "protocol": 999
+            },
+            file
+        )
+
+    version_graph = networkx.DiGraph()
+    version_graph.add_node("v1")
+    networkx.write_gml(version_graph, str(bireus_folder.join("versions.gml")))
+
+    with pytest.raises(ProtocolException):
+        ClientRepository(Path(repo_folder.strpath))

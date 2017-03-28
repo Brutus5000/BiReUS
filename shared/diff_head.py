@@ -11,10 +11,12 @@ class DiffHead(object):
     Represents the head of a .bireus file
     """
 
-    def __init__(self, repository: str, base_version: str, target_version: str, items: List[DiffItem] = None):
+    def __init__(self, protocol: int, repository: str, base_version: str, target_version: str,
+                 items: List[DiffItem] = None):
         if items is None:
             items = []
 
+        self._protocol = protocol
         self._repository = repository
         self._base_version = base_version
         self._target_version = target_version
@@ -36,8 +38,13 @@ class DiffHead(object):
     def items(self) -> List[DiffItem]:
         return self._items
 
+    @property
+    def protocol(self) -> int:
+        return self._protocol
+
     def to_dict(self) -> Dict[str, Any]:
         result = {
+            'protocol': self.protocol,
             'repository': self.repository,
             'base_version': self.base_version,
             'target_version': self.target_version,
@@ -51,7 +58,8 @@ class DiffHead(object):
 
     @staticmethod
     def load_dict(data: Dict[str, Any]) -> 'DiffHead':
-        result = DiffHead(repository=data['repository'],
+        result = DiffHead(protocol=data['protocol'],
+                          repository=data['repository'],
                           base_version=data['base_version'],
                           target_version=data['target_version'])
 

@@ -1,4 +1,5 @@
 # coding=utf-8
+import abc
 import json
 import logging
 import tempfile
@@ -15,7 +16,8 @@ from shared.diff_item import DiffItem
 
 logger = logging.getLogger(__name__)
 
-class CompareTask(object):
+
+class AbstractCompareTask(abc.ABC):
     def __init__(self, absolute_path: Path, name: str, base: str, target: str, is_zipdelta: bool = False):
         self._absolute_path = absolute_path
         self.name = name
@@ -27,13 +29,34 @@ class CompareTask(object):
         self._targetpath = absolute_path.joinpath(self.target)  # type: Path
         self._deltapath = absolute_path.joinpath(self.base, '.delta_to', self.target)
 
+    @abc.abstractclassmethod
+    def get_version(cls) -> int:
+        pass
+
+    @abc.abstractclassmethod
+    def create(cls, absolute_path: Path, name: str, base: str, target: str,
+               is_zipdelta: bool = False) -> 'AbstractCompareTask':
+        pass
+
+
+class CompareTaskV1(AbstractCompareTask):
+    @classmethod
+    def get_version(cls) -> int:
+        return 1
+
+    @classmethod
+    def create(cls, absolute_path: Path, name: str, base: str, target: str,
+               is_zipdelta: bool = False) -> 'AbstractCompareTask':
+        return CompareTaskV1(absolute_path, name, base, target, is_zipdelta)
+
     def generate_diff(self, write_deltafile: bool = True) -> DiffHead:
         if not self.is_zipdelta:
             logger.debug('Generating %s diff `%s` -> `%s`', self.name, self.base, self.target)
 
         self._deltapath.mkdir(parents=True, exist_ok=True)
 
-        bireus_head = DiffHead(repository=self.name,
+        bireus_head = DiffHead(protocol=self.get_version(),
+                               repository=self.name,
                                base_version=self.base,
                                target_version=self.target)
 
@@ -145,7 +168,8 @@ class CompareTask(object):
                     targetZip.extractall(str(temp_targetpath))
 
                 logger.debug("zipdelta required for `%s`", file_path)
-                zip_diff = CompareTask(temp_abspath, self.name, self.base, self.target, is_zipdelta=True).generate_diff(
+                zip_diff = CompareTaskV1(temp_abspath, self.name, self.base, self.target,
+                                         is_zipdelta=True).generate_diff(
                     False)
                 copy_folder(temp_deltapath, deltapath)
 

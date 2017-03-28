@@ -4,11 +4,11 @@ import logging
 
 import networkx
 
-from server import get_subdirectory_names, patching_strategies
-from server.compare_task import CompareTask
+from client import patch_tasks
+from server import get_subdirectory_names, patching_strategies, compare_tasks
 from server.patch_strategy import AbstractStrategy
 from shared import *
-from shared.repository import BaseRepository
+from shared.repository import BaseRepository, ProtocolException
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 class ServerRepository(BaseRepository):
     def __init__(self, absolute_path: Path):
         super().__init__(absolute_path)
+
+        if self.protocol not in patch_tasks:
+            logger.error("client does not support repository protocol version %s", self.protocol)
+            raise ProtocolException("client does not support repository protocol version %s" % self.protocol)
 
     @property
     def info_path(self) -> Path:
@@ -48,7 +52,7 @@ class ServerRepository(BaseRepository):
                 logger.info("new version: %s", version_dir)
                 self.add_version(version_dir)
                 logger.debug('append %s to known versions', version_dir)
-                self._metadata['config']['latest_version'] = version_dir
+                self._metadata['latest_version'] = version_dir
                 self._save_info_json()
                 networkx.write_gml(self.version_graph, str(self.version_graph_path))
 
@@ -66,7 +70,7 @@ class ServerRepository(BaseRepository):
             version_from = patch[0]
             version_to = patch[1]
             logger.info('Generating patch for %s -> %s', version_from, version_to)
-            CompareTask(self._absolute_path, self.name, version_from, version_to).generate_diff()
+            compare_tasks[self.protocol](self._absolute_path, self.name, version_from, version_to).generate_diff()
 
     def cleanup(self) -> None:
         logger.debug('Cleanup %s', self.name)
@@ -74,12 +78,11 @@ class ServerRepository(BaseRepository):
 
     def _save_info_json(self):
         info_json = {
-            "config": {
-                "name": self.name,
-                "first_version": self.first_version,
-                "latest_version": self.latest_version,
-                "strategy": self.strategy
-            },
+            "name": self.name,
+            "first_version": self.first_version,
+            "latest_version": self.latest_version,
+            "strategy": self.strategy,
+            "protocol": 1
         }
 
         with self.info_path.open("w+") as file:
@@ -95,12 +98,11 @@ class ServerRepository(BaseRepository):
 
         with path.joinpath("info.json").open("w+") as file:
             info_json = {
-                "config": {
-                    "name": name,
-                    "first_version": first_version,
-                    "latest_version": first_version,
-                    "strategy": strategy
-                },
+                "name": name,
+                "first_version": first_version,
+                "latest_version": first_version,
+                "strategy": strategy,
+                "protocol": 1
             }
 
             json.dump(info_json, file)

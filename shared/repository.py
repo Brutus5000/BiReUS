@@ -9,6 +9,10 @@ import networkx
 logger = logging.getLogger(__name__)
 
 
+class ProtocolException(Exception):
+    pass
+
+
 class BaseRepository(abc.ABC):
     def __init__(self, absolute_path: Path):
         if not absolute_path.exists():
@@ -39,19 +43,23 @@ class BaseRepository(abc.ABC):
 
     @property
     def name(self) -> str:
-        return self._metadata['config']['name']
+        return self._metadata['name']
 
     @property
     def first_version(self) -> str:
-        return self._metadata['config']['first_version']
+        return self._metadata['first_version']
 
     @property
     def latest_version(self) -> str:
-        return self._metadata['config']['latest_version']
+        return self._metadata['latest_version']
 
     def has_version(self, name: str):
         return self.version_graph.has_node(name)
 
     @property
     def strategy(self) -> str:
-        return self._metadata['config']['strategy']
+        return self._metadata['strategy']
+
+    @property
+    def protocol(self) -> int:
+        return self._metadata['protocol']

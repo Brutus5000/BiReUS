@@ -8,6 +8,7 @@ import pytest
 from server.repository_manager import RepositoryManager, InvalidRepositoryPathError
 from shared import *
 from shared.diff_head import DiffHead
+from shared.repository import ProtocolException
 
 
 def create_simplefile(path: str, name: str, content: str) -> str:
@@ -26,12 +27,11 @@ def empty_repo_with_2_version(tmpdir):
     with info_json.open("w") as file:
         json.dump(
             {
-                "config": {
-                    "name": "repo_demo",
-                    "first_version": "v1",
-                    "latest_version": "v1",
-                    "strategy": "inst-bi"
-                },
+                "name": "repo_demo",
+                "first_version": "v1",
+                "latest_version": "v1",
+                "strategy": "inst-bi",
+                "protocol": 1
             },
             file
         )
@@ -57,12 +57,11 @@ def test_load_empty_repo(tmpdir):
     with info_json.open("w") as file:
         json.dump(
             {
-                "config": {
-                    "name": "repo_demo",
-                    "first_version": "v1",
-                    "latest_version": "v1",
-                    "strategy": "inst-bi"
-                },
+                "name": "repo_demo",
+                "first_version": "v1",
+                "latest_version": "v1",
+                "strategy": "inst-bi",
+                "protocol": 1
             },
             file
         )
@@ -341,12 +340,11 @@ def test_forward_only(tmpdir):
     with info_json.open("w") as file:
         json.dump(
             {
-                "config": {
-                    "name": "repo_demo",
-                    "first_version": "v1",
-                    "latest_version": "v1",
-                    "strategy": "inst-fo"
-                },
+                "name": "repo_demo",
+                "first_version": "v1",
+                "latest_version": "v1",
+                "strategy": "inst-fo",
+                "protocol": 1
             },
             file
         )
@@ -385,9 +383,9 @@ def test_create_repository(tmpdir):
         info_json = json.load(file)
 
     assert path.joinpath("new_repo", "1.0.0").exists()
-    assert info_json["config"]["name"] == "new_repo"
-    assert info_json["config"]["latest_version"] == "1.0.0"
-    assert info_json["config"]["strategy"] == "inst-bi"
+    assert info_json["name"] == "new_repo"
+    assert info_json["latest_version"] == "1.0.0"
+    assert info_json["strategy"] == "inst-bi"
 
     version_graph_path = path.joinpath("new_repo", "versions.gml")
     version_graph = networkx.read_gml(str(version_graph_path))
@@ -403,9 +401,9 @@ def test_create_repository_2(tmpdir):
         info_json = json.load(file)
 
     assert path.joinpath("new_repo", "v1").exists()
-    assert info_json["config"]["name"] == "new_repo"
-    assert info_json["config"]["latest_version"] == "v1"
-    assert info_json["config"]["strategy"] == "inc-fo"
+    assert info_json["name"] == "new_repo"
+    assert info_json["latest_version"] == "v1"
+    assert info_json["strategy"] == "inc-fo"
 
     version_graph_path = path.joinpath("new_repo", "versions.gml")
     version_graph = networkx.read_gml(str(version_graph_path))
@@ -423,9 +421,33 @@ def test_update_3_repos(empty_repo_with_2_version):
     with Path(repo_folder.strpath, "info.json").open("r") as file:
         info_json = json.load(file)
 
-    assert info_json['config']['latest_version'] == "v3"
+    assert info_json['latest_version'] == "v3"
 
     assert Path(repo_folder.strpath, "__patches__", "v1_to_v3.tar.xz").exists()
     assert Path(repo_folder.strpath, "__patches__", "v1_to_v2.tar.xz").exists()
     assert Path(repo_folder.strpath, "__patches__", "v2_to_v1.tar.xz").exists()
     assert Path(repo_folder.strpath, "__patches__", "v3_to_v1.tar.xz").exists()
+
+
+def test_protocol_exception(tmpdir):
+    repo_folder = tmpdir.mkdir("repo_demo")
+
+    info_json = repo_folder.join("info.json")
+    with info_json.open("w") as file:
+        json.dump(
+            {
+                "name": "repo_demo",
+                "first_version": "v1",
+                "latest_version": "v1",
+                "strategy": "inst-bi",
+                "protocol": 999
+            },
+            file
+        )
+
+    version_graph = networkx.DiGraph()
+    version_graph.add_node("v1")
+    networkx.write_gml(version_graph, str(repo_folder.join("versions.gml")))
+
+    with pytest.raises(ProtocolException):
+        repo_manager = RepositoryManager(Path(tmpdir.strpath))

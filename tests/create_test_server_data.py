@@ -474,12 +474,11 @@ def create_test_server_data(path: Path, strategy: str):
     with repo_path.joinpath("info.json").open(mode='w+') as info_file:
         json.dump(
             {
-                "config": {
-                    "name": "repo_demo",
-                    "first_version": "v1",
-                    "latest_version": "v2",
-                    "strategy": strategy
-                },
+                "name": "repo_demo",
+                "first_version": "v1",
+                "latest_version": "v2",
+                "strategy": strategy,
+                "protocol": 1
             },
             info_file
         )
