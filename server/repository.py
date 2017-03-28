@@ -43,18 +43,14 @@ class ServerRepository(BaseRepository):
         logger.debug('begin patching')
 
         # check for new versions
-        new_versions = False
         for version_dir in version_list:
             if not self.has_version(version_dir):
-                new_versions = True
                 logger.info("new version: %s", version_dir)
                 self.add_version(version_dir)
                 logger.debug('append %s to known versions', version_dir)
                 self._metadata['config']['latest_version'] = version_dir
                 self._save_info_json()
-
-        if new_versions:
-            networkx.write_gml(self.version_graph, str(self.version_graph_path))
+                networkx.write_gml(self.version_graph, str(self.version_graph_path))
 
     def add_version(self, new_version: str) -> None:
         logger.debug("existing versions: %s", list(self.version_graph))
