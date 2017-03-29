@@ -4,11 +4,11 @@ import logging
 
 import networkx
 
-from client import patch_tasks
-from server import get_subdirectory_names, patching_strategies, compare_tasks
+from server import get_subdirectory_names, patching_strategies
+from server.compare_tasks.base import CompareTask
 from server.patch_strategy import AbstractStrategy
 from shared import *
-from shared.repository import BaseRepository, ProtocolException
+from shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +17,7 @@ class ServerRepository(BaseRepository):
     def __init__(self, absolute_path: Path):
         super().__init__(absolute_path)
 
-        if self.protocol not in patch_tasks:
-            logger.error("client does not support repository protocol version %s", self.protocol)
-            raise ProtocolException("client does not support repository protocol version %s" % self.protocol)
+        self._compare_task_factory = CompareTask.get_factory(self.protocol)
 
     @property
     def info_path(self) -> Path:
@@ -70,7 +68,7 @@ class ServerRepository(BaseRepository):
             version_from = patch[0]
             version_to = patch[1]
             logger.info('Generating patch for %s -> %s', version_from, version_to)
-            compare_tasks[self.protocol](self._absolute_path, self.name, version_from, version_to).generate_diff()
+            self._compare_task_factory(self._absolute_path, self.name, version_from, version_to).generate_diff()
 
     def cleanup(self) -> None:
         logger.debug('Cleanup %s', self.name)

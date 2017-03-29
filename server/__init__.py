@@ -1,5 +1,6 @@
 # coding=utf-8
 from pathlib import Path
+
 from typing import List
 
 
@@ -11,7 +12,6 @@ def get_filenames(path: Path) -> List[str]:
     return [f.name for f in path.iterdir() if f.is_file()]
 
 
-from server.compare_task import CompareTaskV1
 from server.patch_strategy import IncrementalStrategy, InstantStrategy, MajorMinorStrategy
 
 patching_strategies = dict()
@@ -21,6 +21,3 @@ patching_strategies["inst-bi"] = InstantStrategy()
 patching_strategies["inst-fo"] = InstantStrategy(bidirectional=False)
 patching_strategies["major-bi"] = MajorMinorStrategy()
 patching_strategies["major-fo"] = MajorMinorStrategy(bidirectional=False)
-
-compare_tasks = dict()  # type: Dict
-compare_tasks[CompareTaskV1.get_version()] = CompareTaskV1.create

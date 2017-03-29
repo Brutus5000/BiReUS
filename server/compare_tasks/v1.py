@@ -1,52 +1,28 @@
 # coding=utf-8
-import abc
 import json
 import logging
 import tempfile
 import zipfile
-from tempfile import TemporaryDirectory
 
 import bsdiff4
 
 from server import get_subdirectory_names, get_filenames
+from server.compare_tasks.base import CompareTask
 from shared import *
-from shared import crc32_from_file
 from shared.diff_head import DiffHead
 from shared.diff_item import DiffItem
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractCompareTask(abc.ABC):
-    def __init__(self, absolute_path: Path, name: str, base: str, target: str, is_zipdelta: bool = False):
-        self._absolute_path = absolute_path
-        self.name = name
-        self.base = base
-        self.target = target
-        self.is_zipdelta = is_zipdelta
-
-        self._basepath = absolute_path.joinpath(self.base)  # type: Path
-        self._targetpath = absolute_path.joinpath(self.target)  # type: Path
-        self._deltapath = absolute_path.joinpath(self.base, '.delta_to', self.target)
-
-    @abc.abstractclassmethod
-    def get_version(cls) -> int:
-        pass
-
-    @abc.abstractclassmethod
-    def create(cls, absolute_path: Path, name: str, base: str, target: str,
-               is_zipdelta: bool = False) -> 'AbstractCompareTask':
-        pass
-
-
-class CompareTaskV1(AbstractCompareTask):
+class CompareTaskV1(CompareTask):
     @classmethod
     def get_version(cls) -> int:
         return 1
 
     @classmethod
     def create(cls, absolute_path: Path, name: str, base: str, target: str,
-               is_zipdelta: bool = False) -> 'AbstractCompareTask':
+               is_zipdelta: bool = False) -> 'CompareTask':
         return CompareTaskV1(absolute_path, name, base, target, is_zipdelta)
 
     def generate_diff(self, write_deltafile: bool = True) -> DiffHead:

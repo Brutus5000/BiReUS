@@ -5,10 +5,10 @@ import tempfile
 
 import networkx
 
-from client import patch_tasks
 from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
+from client.patch_tasks.base import PatchTask
 from shared import *
-from shared.repository import BaseRepository, ProtocolException
+from shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,7 @@ class ClientRepository(BaseRepository):
     def __init__(self, absolute_path: Path, download_service: AbstractDownloadService = None):
         super().__init__(absolute_path)
 
-        if self.protocol not in patch_tasks:
-            logger.error("server does not support repository protocol version %s", self.protocol)
-            raise ProtocolException("server does not support repository protocol version %s" % self.protocol)
+        self._patch_task_factory = PatchTask.get_factory(self.protocol)
 
         if download_service is None:
             logger.debug("Using BasicDownloadService")
@@ -128,8 +126,8 @@ class ClientRepository(BaseRepository):
             raise
 
     async def _apply_patch(self, version_from: str, version_to: str) -> None:
-        patch_task = patch_tasks[self.protocol](self._download_service, self.url, self._absolute_path,
-                                                self.get_patch_path(version_from, version_to))
+        patch_task = self._patch_task_factory(self._download_service, self.url, self._absolute_path,
+                                              self.get_patch_path(version_from, version_to))
         await patch_task.run()
 
     @classmethod

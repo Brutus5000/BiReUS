@@ -1,76 +1,19 @@
 # coding=utf-8
-import abc
 import logging
 import tempfile
 
 import bsdiff4
 
 from client.download_service import AbstractDownloadService
+from client.patch_tasks.base import PatchTask
+from client.patch_tasks.errors import CrcMismatchError
 from shared import *
-from shared.diff_head import DiffHead
 from shared.diff_item import DiffItem
 
 logger = logging.getLogger(__name__)
 
 
-class CrcMismatchError(Exception):
-    def __init__(self, file: Path, expected_crc: str, actual_crc: str):
-        super(CrcMismatchError, self).__init__(self, 'File %s with wrong CRC code (expected=%s, actual=%s)' % (
-            str(file), expected_crc, actual_crc))
-        self.file = file
-        self.expectedCrc = expected_crc
-        self.actualCrc = actual_crc
-
-
-class AbstractPatchTask(abc.ABC):
-    def __init__(self, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
-                 patch_file: Path):
-        self._download_service = download_service
-        self._url = repository_url
-        self._repo_path = repo_path
-        self._patch_file = patch_file
-        self._target_version = None
-
-    async def run(self) -> None:
-        # unpack the patch into a temp folder
-        tempdir = tempfile.TemporaryDirectory(prefix="bireus_patch_")
-        unpack_archive(self._patch_file, tempdir.name)
-
-        diff_head = DiffHead.load_json_file(Path(tempdir.name).joinpath('.bireus'))
-
-        if diff_head.protocol != self.get_version():
-            logger.error(".bireus protocol version %s doesn't match patcher task version %s", diff_head.protocol,
-                         self.get_version())
-            raise Exception(".bireus protocol version %s doesn't match patcher task version %s"
-                            % (diff_head.protocol, self.get_version()))
-
-        self._target_version = diff_head.target_version
-
-        # begin the patching recursion
-        # note: a DiffHead's first and only item is the top folder itself
-        await self.patch(diff_head.items[0], self._repo_path, Path(tempdir.name), False)
-
-        tempdir.cleanup()
-
-    @abc.abstractclassmethod
-    def get_version(cls) -> int:
-        pass
-
-    @abc.abstractclassmethod
-    def create(cls, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
-               patch_file: Path) -> 'AbstractPatchTask':
-        """
-        Abstract factory function for dynamic patcher initialization
-        same params as in constructor!
-        """
-        pass
-
-    @abc.abstractmethod
-    async def patch(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool = False) -> None:
-        pass
-
-
-class PatchTaskV1(AbstractPatchTask):
+class PatchTaskV1(PatchTask):
     @classmethod
     def get_version(cls) -> int:
         return 1

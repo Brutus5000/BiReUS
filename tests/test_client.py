@@ -216,6 +216,7 @@ def test_protocol_exception(tmpdir):
                 "name": "repo_demo",
                 "first_version": "v1",
                 "latest_version": "v1",
+                "current_version": "v1",
                 "strategy": "inst-bi",
                 "protocol": 999
             },
