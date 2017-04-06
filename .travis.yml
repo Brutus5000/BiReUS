@@ -12,7 +12,7 @@ install:
   - pip install coveralls
 
 script:
-  - py.test --cov-report term --cov=client --cov=server --cov=shared tests/
+  - py.test --cov-report term --cov=bireus tests/
 
 after_success:
   - coveralls

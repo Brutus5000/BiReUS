@@ -3,6 +3,7 @@ import abc
 import atexit
 import logging
 from pathlib import Path
+from typing import Any
 
 import aiohttp
 
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadError(Exception):
-    def __init__(self, cause: Exception, url: str):
+    def __init__(self, cause: Any, url: str):
         super(DownloadError, self).__init__('Download from %s failed, caused by %s' % (url, repr(cause)))
         self.url = url
 
@@ -64,6 +65,9 @@ class BasicDownloadService(AbstractDownloadService):
             logger.debug("Starting download from %s to %s", url, str(path))
             async with session.get(url) as response:
                 with path.open(mode="wb") as file:
+                    if response.status != 200:
+                        raise Exception("404 - File not found")
+
                     while True:
                         chunk = await response.content.read(chunk_size)
                         if not chunk:
@@ -77,6 +81,9 @@ class BasicDownloadService(AbstractDownloadService):
             session = await self.get_session()
             logger.debug("Starting download from %s to memory", url)
             async with session.get(url) as response:
+                if response.status != 200:
+                    raise Exception("404 - File not found")
+
                 return await response.read()
         except Exception as e:
             raise DownloadError(e, url)
