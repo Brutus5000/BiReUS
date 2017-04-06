@@ -47,19 +47,15 @@ class Client(object):
         streamhandler.setFormatter(formatter)
         root.addHandler(streamhandler)
 
-        loop = asyncio.get_event_loop()
-
         if args.command == 'init':
-            loop.run_until_complete(ClientRepository.get_from_url(Path(args.path), args.url))
+            ClientRepository.get_from_url(Path(args.path), args.url)
         elif args.command == 'checkout':
             repo = ClientRepository(Path(args.path))
 
             if args.version == 'latest':
-                loop.run_until_complete(repo.checkout_latest())
+                repo.checkout_latest()
             else:
-                loop.run_until_complete(repo.checkout_version(args.version))
-
-        loop.close()
+                repo.checkout_version(args.version)
 
     def get_loglevel(self, level: str) -> int:
         if level == 'debug':

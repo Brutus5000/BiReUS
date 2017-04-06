@@ -41,7 +41,7 @@ def prepare_server():
     # teardown
 
 
-async def get_latest_version(mocker, downloader) -> ClientRepository:
+def get_latest_version(mocker, downloader) -> ClientRepository:
     global client_repo
 
     downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
@@ -50,29 +50,26 @@ async def get_latest_version(mocker, downloader) -> ClientRepository:
     downloader.add_download_action(lambda path_from, path_to: copy_file(version_graph, path_to))
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_latest, path_to))
 
-    return await ClientRepository.get_from_url(client_path, test_url, downloader)
+    return ClientRepository.get_from_url(client_path, test_url, downloader)
 
 
-@pytest.mark.asyncio
-async def test_get_from_url_folder_exists():
+def test_get_from_url_folder_exists():
     Path("tests", "example-client").mkdir(exist_ok=True)
     with pytest.raises(FileExistsError):
-        await ClientRepository.get_from_url(client_path, test_url, MockDownloadService(lambda: None))
+        ClientRepository.get_from_url(client_path, test_url, MockDownloadService(lambda: None))
 
 
-@pytest.mark.asyncio
-async def test_get_from_url_http_error():
+def test_get_from_url_http_error():
     remove_folder(client_path)
     with pytest.raises(DownloadError):
-        await ClientRepository.get_from_url(client_path, test_url,
+        ClientRepository.get_from_url(client_path, test_url,
                                             MockDownloadService(lambda: None, lambda url: (_ for _ in ()).throw(
                                                 DownloadError(None, url))))
 
 
-@pytest.mark.asyncio
-async def test_get_from_url_success(mocker, prepare_server):
+def test_get_from_url_success(mocker, prepare_server):
     downloader = MockDownloadService()
-    await get_latest_version(mocker, downloader)
+    get_latest_version(mocker, downloader)
 
     assert len(downloader.urls_called) == 3
     assert downloader.urls_called[0] == test_url + "/info.json"
@@ -88,15 +85,14 @@ async def test_get_from_url_success(mocker, prepare_server):
                          server_path.joinpath("repo_demo", "v2", "new_folder", "new_file.txt"))
 
 
-@pytest.mark.asyncio
-async def test_checkout_version_success(mocker, prepare_server):
+def test_checkout_version_success(mocker, prepare_server):
     downloader = MockDownloadService()
-    client_repo = await get_latest_version(mocker, downloader)
+    client_repo = get_latest_version(mocker, downloader)
 
     server_update = server_path.joinpath("repo_demo", "__patches__", "v2_to_v1.tar.xz")
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_update, path_to))
 
-    await client_repo.checkout_version("v1")
+    client_repo.checkout_version("v1")
 
     assert len(downloader.urls_called) == 4
     # repo initialization
@@ -116,14 +112,13 @@ async def test_checkout_version_success(mocker, prepare_server):
                          server_path.joinpath("repo_demo", "v1", "removed_folder", "obsolete.txt"))
 
 
-@pytest.mark.asyncio
-async def test_checkout_version_unknown(mocker, prepare_server):
+def test_checkout_version_unknown(mocker, prepare_server):
     downloader = MockDownloadService()
-    client_repo = await get_latest_version(mocker, downloader)
+    client_repo = get_latest_version(mocker, downloader)
     downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
 
     with pytest.raises(CheckoutError):
-        await client_repo.checkout_version("unknown_version")
+        client_repo.checkout_version("unknown_version")
 
     assert len(downloader.urls_called) == 4
     # repo initialization
@@ -135,19 +130,18 @@ async def test_checkout_version_unknown(mocker, prepare_server):
     assert downloader.urls_called[3] == test_url + "/info.json"
 
 
-@pytest.mark.asyncio
-async def test_checkout_version_twice_success(mocker, prepare_server):
+def test_checkout_version_twice_success(mocker, prepare_server):
     downloader = MockDownloadService()
-    client_repo = await get_latest_version(mocker, downloader)
+    client_repo = get_latest_version(mocker, downloader)
 
     server_patch_2_to_1_zip = str(server_path.joinpath("repo_demo", "__patches__", "v2_to_v1.tar.xz"))
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_patch_2_to_1_zip, path_to))
-    await client_repo.checkout_version("v1")
+    client_repo.checkout_version("v1")
 
     server_patch_1_to_2_zip = str(server_path.joinpath("repo_demo", "__patches__", "v1_to_v2.tar.xz"))
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_patch_1_to_2_zip, path_to))
     downloader.add_read_action(lambda url: server_path.joinpath("repo_demo", "info.json").read_bytes())
-    await client_repo.checkout_version("v2")
+    client_repo.checkout_version("v2")
 
     assert len(downloader.urls_called) == 5
     # repo initialization
@@ -168,10 +162,9 @@ async def test_checkout_version_twice_success(mocker, prepare_server):
                          server_path.joinpath("repo_demo", "v2", "new_folder", "new_file.txt"))
 
 
-@pytest.mark.asyncio
-async def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_server):
+def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_server):
     downloader = MockDownloadService()
-    client_repo = await get_latest_version(mocker, downloader)
+    client_repo = get_latest_version(mocker, downloader)
 
     with client_path.joinpath("changed.txt").open("wb") as file:
         file.write("test".encode("utf-8"))
@@ -182,7 +175,7 @@ async def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_ser
     server_single_file = server_path.joinpath("repo_demo", "v1", "changed.txt")
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_single_file, path_to))
 
-    await client_repo.checkout_version("v1")
+    client_repo.checkout_version("v1")
 
     assert len(downloader.urls_called) == 5
     # repo initialization

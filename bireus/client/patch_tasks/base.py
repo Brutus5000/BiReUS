@@ -23,7 +23,7 @@ class PatchTask(abc.ABC):
         self._patch_file = patch_file
         self._target_version = None
 
-    async def run(self) -> None:
+    def run(self) -> None:
         # unpack the patch into a temp folder
         tempdir = tempfile.TemporaryDirectory(prefix="bireus_patch_")
         unpack_archive(self._patch_file, tempdir.name)
@@ -40,7 +40,7 @@ class PatchTask(abc.ABC):
 
         # begin the patching recursion
         # note: a DiffHead's first and only item is the top folder itself
-        await self.patch(diff_head.items[0], self._repo_path, Path(tempdir.name), False)
+        self.patch(diff_head.items[0], self._repo_path, Path(tempdir.name), False)
 
         tempdir.cleanup()
 
@@ -70,5 +70,5 @@ class PatchTask(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def patch(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool = False) -> None:
+    def patch(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool = False) -> None:
         pass

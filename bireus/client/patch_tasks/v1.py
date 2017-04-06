@@ -23,15 +23,15 @@ class PatchTaskV1(PatchTask):
                patch_file: Path):
         return PatchTaskV1(download_service, repository_url, repo_path, patch_file)
 
-    async def patch(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool = False) -> None:
+    def patch(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool = False) -> None:
         for item in diff.items:
             if item.type == 'file':
-                await self.patch_file(item, base_path.joinpath(item.name), patch_path.joinpath(item.name), inside_zip)
+                self.patch_file(item, base_path.joinpath(item.name), patch_path.joinpath(item.name), inside_zip)
             elif item.type == 'directory':
-                await self.patch_directory(item, base_path.joinpath(item.name), patch_path.joinpath(item.name),
+                self.patch_directory(item, base_path.joinpath(item.name), patch_path.joinpath(item.name),
                                            inside_zip)
 
-    async def patch_directory(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool) -> None:
+    def patch_directory(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool) -> None:
         logger.debug('Patching directory -> action=%s,  folder=%s, relative path=%s', diff.action, diff.name,
                      str(patch_path))
 
@@ -42,9 +42,9 @@ class PatchTaskV1(PatchTask):
         elif diff.action == 'remove':
             remove_folder(base_path)
         elif diff.action == 'delta':
-            await self.patch(diff, base_path, patch_path, inside_zip)
+            self.patch(diff, base_path, patch_path, inside_zip)
 
-    async def patch_file(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool) -> None:
+    def patch_file(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool) -> None:
         logger.debug('Patching file -> action=%s,  file=%s, path=%s', diff.action, diff.name, str(base_path))
 
         if diff.action == 'add':
@@ -76,18 +76,18 @@ class PatchTaskV1(PatchTask):
                     raise
                 else:
                     logger.info("Emergency fallback: download %s from original source", base_path)
-                    await self._download_service.download(
+                    self._download_service.download(
                         self._url + "/" + self._target_version + "/" + str(
                             base_path.relative_to(self._repo_path)), base_path)
 
         elif diff.action == 'zipdelta':
-            await self.patch_zipdelta(diff, base_path, patch_path, inside_zip)
+            self.patch_zipdelta(diff, base_path, patch_path, inside_zip)
 
-    async def patch_zipdelta(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool) -> None:
+    def patch_zipdelta(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool) -> None:
         tempdir = tempfile.TemporaryDirectory(prefix="bireus_unzipped_")
 
         unpack_archive(base_path, tempdir.name, 'zip')
-        await self.patch_directory(diff, tempdir.name, patch_path.joinpath(diff.name), inside_zip=True)
+        self.patch_directory(diff, tempdir.name, patch_path.joinpath(diff.name), inside_zip=True)
 
         make_archive(str(base_path).replace('.zip', ''), 'zip', tempdir.name)
 

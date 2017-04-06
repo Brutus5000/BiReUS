@@ -1,11 +1,10 @@
 # coding=utf-8
 import abc
-import atexit
 import logging
 from pathlib import Path
-from typing import Any
+from urllib.request import urlretrieve
 
-import aiohttp
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class AbstractDownloadService(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def download(self, url: str, path: Path) -> None:
+    def download(self, url: str, path: Path) -> None:
         """
         Downloads the file at the given url to given path.
         Needs to throw DownloadError if anything bad happens
@@ -33,7 +32,7 @@ class AbstractDownloadService(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def read(self, url: str) -> bytes:
+    def read(self, url: str) -> bytes:
         """
         Reads a file from a remote url
         Needs to throw DownloadError if anything bad happens
@@ -45,45 +44,20 @@ class AbstractDownloadService(abc.ABC):
 
 class BasicDownloadService(AbstractDownloadService):
     """
-    A simple async download service
+    A simple blocking download service
     """
 
-    def __init__(self):
-        self._session = None
-
-    async def get_session(self) -> aiohttp.ClientSession:
-        if self._session is None:
-            self._session = aiohttp.ClientSession()
-            atexit.register(self._session.close)
-        return self._session
-
-    async def download(self, url: str, path: Path) -> None:
-        chunk_size = 1024
-
+    def download(self, url: str, path: Path) -> None:
         try:
-            session = await self.get_session()
             logger.debug("Starting download from %s to %s", url, str(path))
-            async with session.get(url) as response:
-                with path.open(mode="wb") as file:
-                    if response.status != 200:
-                        raise Exception("404 - File not found")
-
-                    while True:
-                        chunk = await response.content.read(chunk_size)
-                        if not chunk:
-                            break
-                        file.write(chunk)
+            urlretrieve(url, str(path))
         except Exception as e:
             raise DownloadError(e, url)
 
-    async def read(self, url: str) -> bytes:
+    def read(self, url: str) -> bytes:
         try:
-            session = await self.get_session()
             logger.debug("Starting download from %s to memory", url)
-            async with session.get(url) as response:
-                if response.status != 200:
-                    raise Exception("404 - File not found")
-
-                return await response.read()
+            filename, httpmessage = urlretrieve(url)
+            return Path(filename).read_bytes()
         except Exception as e:
             raise DownloadError(e, url)
