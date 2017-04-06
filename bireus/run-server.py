@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from server.repository_manager import RepositoryManager
+from bireus.server.repository_manager import RepositoryManager
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)

@@ -5,12 +5,12 @@ import sys
 
 import networkx
 import pytest
+from bireus.client.download_service import DownloadError
 
-from client.download_service import DownloadError
-from client.repository import ClientRepository, CheckoutError
-from server.repository_manager import RepositoryManager
-from shared import *
-from shared.repository import ProtocolException
+from bireus.client.repository import ClientRepository, CheckoutError
+from bireus.server.repository_manager import RepositoryManager
+from bireus.shared import *
+from bireus.shared.repository import ProtocolException
 from tests.create_test_server_data import create_test_server_data
 from tests.mocks.mock_download_service import MockDownloadService
 
@@ -23,8 +23,8 @@ formatter = logging.Formatter('%(asctime)s - %(name)-25s - %(levelname)-5s - %(m
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
-server_path = Path.cwd().joinpath("example-server")
-client_path = Path.cwd().joinpath("example-client")
+server_path = Path.cwd().joinpath("tests", "example-server")
+client_path = Path.cwd().joinpath("tests", "example-client")
 test_url = "http://localhost:12345/subfolder/subsub"
 
 
@@ -55,7 +55,7 @@ async def get_latest_version(mocker, downloader) -> ClientRepository:
 
 @pytest.mark.asyncio
 async def test_get_from_url_folder_exists():
-    Path("example-client").mkdir(exist_ok=True)
+    Path("tests", "example-client").mkdir(exist_ok=True)
     with pytest.raises(FileExistsError):
         await ClientRepository.get_from_url(client_path, test_url, MockDownloadService(lambda: None))
 

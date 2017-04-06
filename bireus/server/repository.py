@@ -3,12 +3,12 @@ import json
 import logging
 
 import networkx
+from bireus.server import get_subdirectory_names, patching_strategies
+from bireus.server.patch_strategy import AbstractStrategy
 
-from server import get_subdirectory_names, patching_strategies
-from server.compare_tasks.base import CompareTask
-from server.patch_strategy import AbstractStrategy
-from shared import *
-from shared.repository import BaseRepository
+from bireus.server.compare_tasks.base import CompareTask
+from bireus.shared import *
+from bireus.shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 

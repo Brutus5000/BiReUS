@@ -12,7 +12,7 @@ def get_filenames(path: Path) -> List[str]:
     return [f.name for f in path.iterdir() if f.is_file()]
 
 
-from server.patch_strategy import IncrementalStrategy, InstantStrategy, MajorMinorStrategy
+from bireus.server.patch_strategy import IncrementalStrategy, InstantStrategy, MajorMinorStrategy
 
 patching_strategies = dict()
 patching_strategies["inc-bi"] = IncrementalStrategy()

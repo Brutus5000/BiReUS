@@ -1,9 +1,10 @@
 # coding=utf-8
 import json
 from pathlib import Path
+
 from typing import List, Dict, Any
 
-from shared.diff_item import DiffItem
+from bireus.shared.diff_item import DiffItem
 
 
 class DiffHead(object):

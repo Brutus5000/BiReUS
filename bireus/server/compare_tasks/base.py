@@ -2,8 +2,8 @@
 import abc
 import logging
 
-from shared import *
-from shared.repository import ProtocolException
+from bireus.shared import *
+from bireus.shared.repository import ProtocolException
 
 logger = logging.getLogger(__name__)
 

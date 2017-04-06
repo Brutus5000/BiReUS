@@ -2,7 +2,7 @@
 import networkx
 import pytest
 
-from server.patch_strategy import IncrementalStrategy, InstantStrategy, MajorMinorStrategy
+from bireus.server.patch_strategy import IncrementalStrategy, InstantStrategy, MajorMinorStrategy
 
 
 @pytest.fixture

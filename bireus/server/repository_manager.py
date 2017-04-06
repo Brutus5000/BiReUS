@@ -1,10 +1,11 @@
 # coding=utf-8
 import logging
+
+from bireus.server import get_subdirectory_names
 from typing import List
 
-from server import get_subdirectory_names
-from server.repository import ServerRepository
-from shared import *
+from bireus.server.repository import ServerRepository
+from bireus.shared import *
 
 logger = logging.getLogger(__name__)
 

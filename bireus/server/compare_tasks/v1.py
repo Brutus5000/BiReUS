@@ -5,12 +5,12 @@ import tempfile
 import zipfile
 
 import bsdiff4
+from bireus.server import get_subdirectory_names, get_filenames
 
-from server import get_subdirectory_names, get_filenames
-from server.compare_tasks.base import CompareTask
-from shared import *
-from shared.diff_head import DiffHead
-from shared.diff_item import DiffItem
+from bireus.server.compare_tasks.base import CompareTask
+from bireus.shared import *
+from bireus.shared.diff_head import DiffHead
+from bireus.shared.diff_item import DiffItem
 
 logger = logging.getLogger(__name__)
 

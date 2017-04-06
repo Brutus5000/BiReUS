@@ -4,11 +4,11 @@ import tempfile
 
 import bsdiff4
 
-from client.download_service import AbstractDownloadService
-from client.patch_tasks.base import PatchTask
-from client.patch_tasks.errors import CrcMismatchError
-from shared import *
-from shared.diff_item import DiffItem
+from bireus.client.download_service import AbstractDownloadService
+from bireus.client.patch_tasks.errors import CrcMismatchError
+from bireus.client.patch_tasks.base import PatchTask
+from bireus.shared import *
+from bireus.shared.diff_item import DiffItem
 
 logger = logging.getLogger(__name__)
 

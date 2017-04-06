@@ -12,7 +12,7 @@ from pathlib import Path
 
 import networkx
 
-from shared import remove_folder
+from bireus.shared import remove_folder
 
 
 def create_test_server_data(path: Path, strategy: str):

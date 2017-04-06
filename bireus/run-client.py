@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 
-from client.repository import ClientRepository
+from bireus.client.repository import ClientRepository
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)

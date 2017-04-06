@@ -5,10 +5,10 @@ import tempfile
 
 import networkx
 
-from client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
-from client.patch_tasks.base import PatchTask
-from shared import *
-from shared.repository import BaseRepository
+from bireus.client.download_service import AbstractDownloadService, BasicDownloadService, DownloadError
+from bireus.client.patch_tasks.base import PatchTask
+from bireus.shared import *
+from bireus.shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 

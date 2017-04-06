@@ -1,5 +1,7 @@
 from distutils.core import setup
 
+from setuptools import find_packages
+
 setup(
     # Application name:
     name="BiReUS",
@@ -12,7 +14,7 @@ setup(
     author_email="c-schmidt@gmx.eu",
 
     # Packages
-    packages=["client", "server", "shared"],
+    packages=find_packages(),
 
     # Include additional files into the package
     include_package_data=True,

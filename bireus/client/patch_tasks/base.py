@@ -3,11 +3,11 @@ import abc
 import logging
 import tempfile
 
-from client.download_service import AbstractDownloadService
-from shared import *
-from shared.diff_head import DiffHead
-from shared.diff_item import DiffItem
-from shared.repository import ProtocolException
+from bireus.client.download_service import AbstractDownloadService
+from bireus.shared import *
+from bireus.shared.diff_head import DiffHead
+from bireus.shared.diff_item import DiffItem
+from bireus.shared.repository import ProtocolException
 
 logger = logging.getLogger(__name__)
 

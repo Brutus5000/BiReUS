@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from client.download_service import AbstractDownloadService
+from bireus.client.download_service import AbstractDownloadService
 
 
 class MockDownloadService(AbstractDownloadService):

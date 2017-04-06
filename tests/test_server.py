@@ -5,10 +5,10 @@ import bsdiff4
 import networkx
 import pytest
 
-from server.repository_manager import RepositoryManager, InvalidRepositoryPathError
-from shared import *
-from shared.diff_head import DiffHead
-from shared.repository import ProtocolException
+from bireus.server.repository_manager import RepositoryManager, InvalidRepositoryPathError
+from bireus.shared import *
+from bireus.shared.diff_head import DiffHead
+from bireus.shared.repository import ProtocolException
 
 
 def create_simplefile(path: str, name: str, content: str) -> str:
