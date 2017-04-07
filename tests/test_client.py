@@ -50,7 +50,7 @@ def get_latest_version(mocker, downloader) -> ClientRepository:
     downloader.add_download_action(lambda path_from, path_to: copy_file(version_graph, path_to))
     downloader.add_download_action(lambda path_from, path_to: copy_file(server_latest, path_to))
 
-    return ClientRepository.get_from_url(client_path, test_url, downloader)
+    return ClientRepository.get_from_url(client_path, test_url, downloader, file_logging=False)
 
 
 def test_get_from_url_folder_exists():

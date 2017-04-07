@@ -2,6 +2,7 @@
 import json
 import logging
 import tempfile
+from logging.handlers import RotatingFileHandler
 
 import networkx
 
@@ -12,6 +13,22 @@ from bireus.shared import *
 from bireus.shared.repository import BaseRepository
 
 logger = logging.getLogger(__name__)
+logging_configured = False
+
+
+def configure_logging(logfile: str):
+    global logging_configured
+
+    if not logging_configured:
+        root = logging.getLogger("bireus")
+        root.setLevel(logging.DEBUG)
+
+        handler = RotatingFileHandler(logfile, maxBytes=5000000, backupCount=5)
+        formatter = logging.Formatter('%(asctime)s - %(name)-30s - %(levelname)-5s - %(message)s')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+
+        logging_configured = True
 
 
 class CheckoutError(Exception):
@@ -19,8 +36,12 @@ class CheckoutError(Exception):
 
 
 class ClientRepository(BaseRepository):
-    def __init__(self, absolute_path: Path, download_service: AbstractDownloadService = None):
+    def __init__(self, absolute_path: Path, download_service: AbstractDownloadService = None,
+                 file_logging: bool = True):
         super().__init__(absolute_path)
+
+        if file_logging:
+            configure_logging(str(absolute_path.joinpath(".bireus", "activity.log")))
 
         self._patch_task_factory = PatchTask.get_factory(self.protocol)
 
@@ -154,8 +175,8 @@ class ClientRepository(BaseRepository):
         self._notification_service.finish_apply_patch(version_from, version_to)
 
     @classmethod
-    def get_from_url(cls, path: Path, url: str,
-                     download_service: AbstractDownloadService = None) -> 'ClientRepository':
+    def get_from_url(cls, path: Path, url: str, download_service: AbstractDownloadService = None,
+                     file_logging: bool = True) -> 'ClientRepository':
         if download_service is None:
             logger.debug("Using BasicDownloadService")
             download_service = BasicDownloadService()
@@ -194,4 +215,4 @@ class ClientRepository(BaseRepository):
             unpack_archive(tmpfilepath, path, 'xztar')
             logger.info("Downloaded and unpacked latest.tar.xz")
 
-        return ClientRepository(path, download_service)
+        return ClientRepository(path, download_service, file_logging)

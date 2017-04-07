@@ -26,7 +26,7 @@ class Client(object):
            checkout <version> [-p <path>] Switch to a specified version
         ''')
 
-        parser.add_argument("--debug", "-d", default='info', choices=['debug', 'info', 'warning', 'error'])
+        parser.add_argument("--debug", "-d", default='warning', choices=['debug', 'info', 'warning', 'error'])
 
         subparsers = parser.add_subparsers(dest='command')
         subparsers.required = True
@@ -67,7 +67,7 @@ class Client(object):
         elif level == 'error':
             return logging.ERROR
         else:  # default
-            return logging.INFO
+            return logging.WARNING
 
 
 if __name__ == '__main__':
