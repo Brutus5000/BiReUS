@@ -4,6 +4,7 @@ import logging
 import tempfile
 
 from bireus.client.download_service import AbstractDownloadService
+from bireus.client.notification_service import NotificationService
 from bireus.shared import *
 from bireus.shared.diff_head import DiffHead
 from bireus.shared.diff_item import DiffItem
@@ -15,8 +16,9 @@ logger = logging.getLogger(__name__)
 class PatchTask(abc.ABC):
     _patch_tasks = None
 
-    def __init__(self, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
-                 patch_file: Path):
+    def __init__(self, notification_service: NotificationService, download_service: AbstractDownloadService,
+                 repository_url: str, repo_path: Path, patch_file: Path):
+        self._notification_service = notification_service
         self._download_service = download_service
         self._url = repository_url
         self._repo_path = repo_path
@@ -33,6 +35,8 @@ class PatchTask(abc.ABC):
         if diff_head.protocol != self.get_version():
             logger.error(".bireus protocol version %s doesn't match patcher task version %s", diff_head.protocol,
                          self.get_version())
+            self._notification_service.error(".bireus protocol version %s doesn't match patcher task version %s" % (
+                diff_head.protocol, self.get_version()))
             raise Exception(".bireus protocol version %s doesn't match patcher task version %s"
                             % (diff_head.protocol, self.get_version()))
 
@@ -61,7 +65,7 @@ class PatchTask(abc.ABC):
         pass
 
     @abc.abstractclassmethod
-    def create(cls, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
+    def create(cls, notification_service: NotificationService, download_service: AbstractDownloadService, repository_url: str, repo_path: Path,
                patch_file: Path) -> 'PatchTask':
         """
         Abstract factory function for dynamic patcher initialization

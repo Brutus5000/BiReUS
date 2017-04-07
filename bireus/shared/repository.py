@@ -17,19 +17,23 @@ class BaseRepository(abc.ABC):
     def __init__(self, absolute_path: Path):
         if not absolute_path.exists():
             logger.error("repository path `%s` does not exist", absolute_path.name)
-            raise FileNotFoundError("repository path `%s` does not exist", absolute_path.name)
+            raise FileNotFoundError("repository path `%s` does not exist" % absolute_path.name)
 
         self._absolute_path = absolute_path
 
         if not self.info_path.exists():
             logger.error("`%s` is not a valid BiReUS repository", absolute_path.name)
-            raise ValueError("`%s` is not a valid BiReUS repository", absolute_path.name)
+            raise ValueError("`%s` is not a valid BiReUS repository" % absolute_path.name)
 
         logger.debug("Initialize Repository @ %s ", absolute_path)
         with self.info_path.open("r") as file:
             self._metadata = json.load(file)
 
         self.version_graph = networkx.read_gml(str(self.version_graph_path))  # type: networkx.Graph
+
+    @property
+    def absolute_path(self):
+        return self._absolute_path
 
     @property
     @abc.abstractmethod
