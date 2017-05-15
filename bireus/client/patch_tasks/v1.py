@@ -6,8 +6,8 @@ import bsdiff4
 
 from bireus.client.download_service import AbstractDownloadService
 from bireus.client.notification_service import NotificationService
-from bireus.client.patch_tasks.errors import CrcMismatchError
 from bireus.client.patch_tasks.base import PatchTask
+from bireus.client.patch_tasks.errors import CrcMismatchError
 from bireus.shared import *
 from bireus.shared.diff_item import DiffItem
 
@@ -104,8 +104,10 @@ class PatchTaskV1(PatchTask):
         tempdir = tempfile.TemporaryDirectory(prefix="bireus_unzipped_")
 
         unpack_archive(base_path, tempdir.name, 'zip')
-        self.patch_directory(diff, Path(tempdir.name), patch_path.joinpath(diff.name), inside_zip=True)
+        self.patch(diff, Path(tempdir.name), patch_path, inside_zip=True)
 
-        make_archive(str(base_path).replace('.zip', ''), 'zip', tempdir.name)
+        base_path.unlink()
+        make_archive(str(base_path), 'zip', tempdir.name)
+        move_file(str(base_path) + ".zip", base_path)
 
         tempdir.cleanup()

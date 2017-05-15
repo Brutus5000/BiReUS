@@ -5,12 +5,13 @@ import sys
 
 import networkx
 import pytest
-from bireus.client.download_service import DownloadError
 
+from bireus.client.download_service import DownloadError
 from bireus.client.repository import ClientRepository, CheckoutError
 from bireus.server.repository_manager import RepositoryManager
 from bireus.shared import *
 from bireus.shared.repository import ProtocolException
+from tests import assert_file_equals, assert_zip_file_equals
 from tests.create_test_server_data import create_test_server_data
 from tests.mocks.mock_download_service import MockDownloadService
 
@@ -77,12 +78,16 @@ def test_get_from_url_success(mocker, prepare_server):
     assert downloader.urls_called[2] == test_url + "/latest.tar.xz"
 
     assert client_path.joinpath(".bireus", "info.json").exists()
-    assert compare_files(client_path.joinpath("changed.txt"), server_path.joinpath("repo_demo", "v2", "changed.txt"))
-    assert compare_files(client_path.joinpath("changed.zip"), server_path.joinpath("repo_demo", "v2", "changed.zip"))
-    assert compare_files(client_path.joinpath("unchanged.txt"),
-                         server_path.joinpath("repo_demo", "v2", "unchanged.txt"))
-    assert compare_files(client_path.joinpath("new_folder", "new_file.txt"),
-                         server_path.joinpath("repo_demo", "v2", "new_folder", "new_file.txt"))
+    assert client_path.joinpath(".bireus", "versions.gml").exists()
+
+    original_source_path = server_path.joinpath("repo_demo", "v2")
+
+    assert not original_source_path.joinpath("removed_folder").joinpath("obsolete.txt").exists()
+    assert_file_equals(client_path, original_source_path, Path("new_folder", "new_file.txt"))
+    assert_file_equals(client_path, original_source_path, Path("zip_sub", "changed-subfolder.test"))
+    assert_file_equals(client_path, original_source_path, "changed.txt")
+    assert_file_equals(client_path, original_source_path, "changed.zip")
+    assert_file_equals(client_path, original_source_path, "unchanged.txt")
 
 
 def test_checkout_version_success(mocker, prepare_server):
@@ -103,13 +108,14 @@ def test_checkout_version_success(mocker, prepare_server):
     # checkout version -> download patch
     assert downloader.urls_called[3] == test_url + "/__patches__/v2_to_v1.tar.xz"
 
-    assert compare_files(client_path.joinpath("changed.txt"), server_path.joinpath("repo_demo", "v1", "changed.txt"))
-    assert client_path.joinpath("changed.zip").exists()  # zips are not binary identical
-    assert compare_files(client_path.joinpath("removed.txt"), server_path.joinpath("repo_demo", "v1", "removed.txt"))
-    assert compare_files(client_path.joinpath("unchanged.txt"),
-                         server_path.joinpath("repo_demo", "v1", "unchanged.txt"))
-    assert compare_files(client_path.joinpath("removed_folder", "obsolete.txt"),
-                         server_path.joinpath("repo_demo", "v1", "removed_folder", "obsolete.txt"))
+    original_source_path = server_path.joinpath("repo_demo", "v1")
+
+    assert not original_source_path.joinpath("new_folder").joinpath("new_file.txt").exists()
+    assert_file_equals(client_path, original_source_path, Path("removed_folder", "obsolete.txt"))
+    assert_file_equals(client_path, original_source_path, "changed.txt")
+    assert_file_equals(client_path, original_source_path, "unchanged.txt")
+    assert_zip_file_equals(client_path, original_source_path, Path("zip_sub", "changed-subfolder.test"))
+    assert_zip_file_equals(client_path, original_source_path, "changed.zip")
 
 
 def test_checkout_version_unknown(mocker, prepare_server):
@@ -153,13 +159,14 @@ def test_checkout_version_twice_success(mocker, prepare_server):
     assert downloader.urls_called[3] == test_url + "/__patches__/v2_to_v1.tar.xz"
     assert downloader.urls_called[4] == test_url + "/__patches__/v1_to_v2.tar.xz"
 
-    assert client_path.joinpath(".bireus", "info.json").exists()
-    assert compare_files(client_path.joinpath("changed.txt"), server_path.joinpath("repo_demo", "v2", "changed.txt"))
-    assert client_path.joinpath("changed.zip").exists()  # zips are not binary identical
-    assert compare_files(client_path.joinpath("unchanged.txt"),
-                         server_path.joinpath("repo_demo", "v2", "unchanged.txt"))
-    assert compare_files(client_path.joinpath("new_folder", "new_file.txt"),
-                         server_path.joinpath("repo_demo", "v2", "new_folder", "new_file.txt"))
+    original_source_path = server_path.joinpath("repo_demo", "v2")
+
+    assert not original_source_path.joinpath("removed_folder").joinpath("obsolete.txt").exists()
+    assert_file_equals(client_path, original_source_path, Path("new_folder", "new_file.txt"))
+    assert_file_equals(client_path, original_source_path, "changed.txt")
+    assert_file_equals(client_path, original_source_path, "unchanged.txt")
+    assert_zip_file_equals(client_path, original_source_path, Path("zip_sub", "changed-subfolder.test"))
+    assert_zip_file_equals(client_path, original_source_path, "changed.zip")
 
 
 def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_server):
@@ -189,13 +196,14 @@ def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_server):
     # version mismatch -> download file from original repo instead
     assert downloader.urls_called[4] == test_url + "/v1/changed.txt"
 
-    assert compare_files(client_path.joinpath("changed.txt"), server_path.joinpath("repo_demo", "v1", "changed.txt"))
-    assert client_path.joinpath("changed.zip").exists()  # zips are not binary identical
-    assert compare_files(client_path.joinpath("removed.txt"), server_path.joinpath("repo_demo", "v1", "removed.txt"))
-    assert compare_files(client_path.joinpath("unchanged.txt"),
-                         server_path.joinpath("repo_demo", "v1", "unchanged.txt"))
-    assert compare_files(client_path.joinpath("removed_folder", "obsolete.txt"),
-                         server_path.joinpath("repo_demo", "v1", "removed_folder", "obsolete.txt"))
+    original_source_path = server_path.joinpath("repo_demo", "v1")
+
+    assert not original_source_path.joinpath("new_folder").joinpath("new_file.txt").exists()
+    assert_file_equals(client_path, original_source_path, Path("removed_folder", "obsolete.txt"))
+    assert_file_equals(client_path, original_source_path, "changed.txt")
+    assert_file_equals(client_path, original_source_path, "unchanged.txt")
+    assert_zip_file_equals(client_path, original_source_path, Path("zip_sub", "changed-subfolder.test"))
+    assert_zip_file_equals(client_path, original_source_path, "changed.zip")
 
 
 def test_protocol_exception(tmpdir):
