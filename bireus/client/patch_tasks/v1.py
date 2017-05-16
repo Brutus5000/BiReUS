@@ -124,6 +124,8 @@ class PatchTaskV1(PatchTask):
         intermediate_folder = Path(str(patch_path) + ".patched")
         patch_path.rename(intermediate_folder)
 
-        make_archive(str(patch_path), 'zip', str(intermediate_folder))
-        move_file(str(patch_path) + ".zip", patch_path)
-        remove_folder(intermediate_folder)
+        try:
+            make_archive(str(patch_path), 'zip', str(intermediate_folder))
+            move_file(str(patch_path) + ".zip", patch_path)
+        finally:
+            remove_folder(intermediate_folder)

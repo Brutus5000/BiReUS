@@ -51,10 +51,13 @@ class PatchTask(abc.ABC):
         intermediate_folder = Path(self._repo_path.parent.joinpath(self._repo_path.name + ".patched"))
         relative_temp_folder = Path(tempdir.name).relative_to(self._repo_path)
         move_file(self._repo_path, intermediate_folder)
-        move_file(intermediate_folder.joinpath(relative_temp_folder), self._repo_path)
-        self._repo_path.joinpath(".bireus").unlink()  # remove the patch descriptor
-        move_file(intermediate_folder.joinpath(".bireus"), self._repo_path.joinpath(".bireus"))
-        remove_folder(intermediate_folder)
+
+        try:
+            move_file(intermediate_folder.joinpath(relative_temp_folder), self._repo_path)
+            self._repo_path.joinpath(".bireus").unlink()  # remove the patch descriptor
+            move_file(intermediate_folder.joinpath(".bireus"), self._repo_path.joinpath(".bireus"))
+        finally:
+            remove_folder(intermediate_folder)
 
     @classmethod
     def get_factory(cls, protocol: int):
