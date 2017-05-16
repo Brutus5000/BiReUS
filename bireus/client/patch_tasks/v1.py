@@ -41,11 +41,11 @@ class PatchTaskV1(PatchTask):
         self._notification_service.begin_patching_directory(base_path)
 
         if diff.action == 'add':
-            if base_path.exists():
-                remove_folder(base_path)
-            copy_folder(patch_path, base_path)
+            # do nothing: the new files are already in the patch_path
+            pass
         elif diff.action == 'remove':
-            remove_folder(base_path)
+            # do nothing: the files don't exist in the patch_path
+            pass
         elif diff.action == 'delta':
             self.patch(diff, base_path, patch_path, inside_zip)
 
@@ -55,27 +55,28 @@ class PatchTaskV1(PatchTask):
         logger.debug('Patching file -> action=%s,  file=%s, path=%s', diff.action, diff.name, str(base_path))
 
         if diff.action == 'add':
-            self._notification_service.begin_adding_file(base_path)
-            if base_path.exists():
-                base_path.unlink()
-            copy_file(patch_path, base_path)
-            self._notification_service.finish_adding_file(base_path)
+            # do nothing: the new files are already in the patchPath
+            pass
         elif diff.action == 'remove':
-            self._notification_service.begin_removing_file(base_path)
-            base_path.unlink()
-            self._notification_service.finish_removing_file(base_path)
+            # do nothing: the files don't exist in the patchPath
+            pass
+        elif diff.action == 'zipdelta':
+            self.patch_zipdelta(diff, base_path, patch_path)
         elif diff.action == 'bsdiff':
             self._notification_service.begin_patching_file(base_path)
+
+            # apply the patch onto a temporary file and replace the file in patchPath
+            # if checksum does not fit, load file from server and save in patchPath
 
             try:
                 crc_before_patching = crc32_from_file(base_path)
                 if diff.base_crc == crc_before_patching:
                     # using bsdiff4.file_patch_inplace not possible until 1.1.5
-                    bsdiff4.file_patch(str(base_path), str(base_path) + ".patched", str(patch_path))
-                    base_path.unlink()
-                    move_file(str(base_path) + ".patched", base_path)
+                    bsdiff4.file_patch(str(base_path), str(patch_path) + ".patched", str(patch_path))
+                    patch_path.unlink()
+                    move_file(str(patch_path) + ".patched", patch_path)
 
-                    crc_after_patching = crc32_from_file(base_path)
+                    crc_after_patching = crc32_from_file(patch_path)
                     if diff.target_crc != crc_after_patching:
                         logger.error("Crc mismatch after patching in %s (expected=%s, actual=%s)",
                                      str(base_path), diff.target_crc, crc_before_patching)
@@ -95,19 +96,34 @@ class PatchTaskV1(PatchTask):
                     logger.info("Emergency fallback: download %s from original source", base_path)
                     self._download_service.download(
                         self._url + "/" + self._target_version + "/" + str(
-                            base_path.relative_to(self._repo_path)), base_path)
+                            base_path.relative_to(self._repo_path)), patch_path)
+        elif diff.action == 'unchanged':
+            copy_file(base_path, patch_path)
 
-        elif diff.action == 'zipdelta':
-            self.patch_zipdelta(diff, base_path, patch_path, inside_zip)
+    def patch_zipdelta(self, diff: DiffItem, base_path: Path, patch_path: Path) -> None:
+        # we need a temporary folder to extract the zip content from the base files
+        temp_root = self._repo_path.joinpath(".bireus").joinpath("__temp__")
+        temp_root.mkdir(parents=True, exist_ok=True)
+        tempdir = tempfile.TemporaryDirectory(prefix="bireus_unzipped_", dir=str(temp_root))
 
-    def patch_zipdelta(self, diff: DiffItem, base_path: Path, patch_path: Path, inside_zip: bool) -> None:
-        tempdir = tempfile.TemporaryDirectory(prefix="bireus_unzipped_")
-
+        # extract the original files, attention: the patch files aren't zipped anymore
+        logger.debug("Extracting files to %s", str(temp_root))
         unpack_archive(base_path, tempdir.name, 'zip')
+
+        # now we can start the patching
         self.patch(diff, Path(tempdir.name), patch_path, inside_zip=True)
 
-        base_path.unlink()
-        make_archive(str(base_path), 'zip', tempdir.name)
-        move_file(str(base_path) + ".zip", base_path)
-
+        # the patched files are now in patchPath
+        # therefore we can remove the temporaryFolder
+        logger.debug("Removing the temporary base folder {}", str(patch_path))
         tempdir.cleanup()
+
+        # patch_path is a folder with the patch files but is supposed to be the zip file,
+        # therefore we rename the folder for a second before compressing
+        logger.debug("Re-compressing files at {}", str(patch_path))
+        intermediate_folder = Path(str(patch_path) + ".patched")
+        patch_path.rename(intermediate_folder)
+
+        make_archive(str(patch_path), 'zip', str(intermediate_folder))
+        move_file(str(patch_path) + ".zip", patch_path)
+        remove_folder(intermediate_folder)

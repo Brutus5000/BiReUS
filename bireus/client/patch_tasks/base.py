@@ -27,7 +27,9 @@ class PatchTask(abc.ABC):
 
     def run(self) -> None:
         # unpack the patch into a temp folder
-        tempdir = tempfile.TemporaryDirectory(prefix="bireus_patch_")
+        temp_root = self._repo_path.joinpath(".bireus").joinpath("__temp__")
+        temp_root.mkdir(parents=True, exist_ok=True)
+        tempdir = tempfile.TemporaryDirectory(dir=str(temp_root))
         unpack_archive(self._patch_file, tempdir.name)
 
         diff_head = DiffHead.load_json_file(Path(tempdir.name).joinpath('.bireus'))
@@ -46,7 +48,13 @@ class PatchTask(abc.ABC):
         # note: a DiffHead's first and only item is the top folder itself
         self.patch(diff_head.items[0], self._repo_path, Path(tempdir.name), False)
 
-        tempdir.cleanup()
+        intermediate_folder = Path(self._repo_path.parent.joinpath(self._repo_path.name + ".patched"))
+        relative_temp_folder = Path(tempdir.name).relative_to(self._repo_path)
+        move_file(self._repo_path, intermediate_folder)
+        move_file(intermediate_folder.joinpath(relative_temp_folder), self._repo_path)
+        self._repo_path.joinpath(".bireus").unlink()  # remove the patch descriptor
+        move_file(intermediate_folder.joinpath(".bireus"), self._repo_path.joinpath(".bireus"))
+        remove_folder(intermediate_folder)
 
     @classmethod
     def get_factory(cls, protocol: int):

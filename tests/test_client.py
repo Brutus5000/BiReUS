@@ -24,8 +24,8 @@ formatter = logging.Formatter('%(asctime)s - %(name)-25s - %(levelname)-5s - %(m
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
-server_path = Path.cwd().joinpath("tests", "example-server")
-client_path = Path.cwd().joinpath("tests", "example-client")
+server_path = Path.cwd().joinpath("example-server")
+client_path = Path.cwd().joinpath("example-client")
 test_url = "http://localhost:12345/subfolder/subsub"
 
 
@@ -55,7 +55,7 @@ def get_latest_version(mocker, downloader) -> ClientRepository:
 
 
 def test_get_from_url_folder_exists():
-    Path("tests", "example-client").mkdir(exist_ok=True)
+    Path("example-client").mkdir(exist_ok=True)
     with pytest.raises(FileExistsError):
         ClientRepository.get_from_url(client_path, test_url, MockDownloadService(lambda: None))
 
@@ -110,7 +110,7 @@ def test_checkout_version_success(mocker, prepare_server):
 
     original_source_path = server_path.joinpath("repo_demo", "v1")
 
-    assert not original_source_path.joinpath("new_folder").joinpath("new_file.txt").exists()
+    assert not client_path.joinpath("new_folder").joinpath("new_file.txt").exists()
     assert_file_equals(client_path, original_source_path, Path("removed_folder", "obsolete.txt"))
     assert_file_equals(client_path, original_source_path, "changed.txt")
     assert_file_equals(client_path, original_source_path, "unchanged.txt")
@@ -161,7 +161,7 @@ def test_checkout_version_twice_success(mocker, prepare_server):
 
     original_source_path = server_path.joinpath("repo_demo", "v2")
 
-    assert not original_source_path.joinpath("removed_folder").joinpath("obsolete.txt").exists()
+    assert not client_path.joinpath("removed_folder").joinpath("obsolete.txt").exists()
     assert_file_equals(client_path, original_source_path, Path("new_folder", "new_file.txt"))
     assert_file_equals(client_path, original_source_path, "changed.txt")
     assert_file_equals(client_path, original_source_path, "unchanged.txt")
@@ -198,7 +198,7 @@ def test_checkout_version_crc_mismatch_before_patching(mocker, prepare_server):
 
     original_source_path = server_path.joinpath("repo_demo", "v1")
 
-    assert not original_source_path.joinpath("new_folder").joinpath("new_file.txt").exists()
+    assert not client_path.joinpath("new_folder").joinpath("new_file.txt").exists()
     assert_file_equals(client_path, original_source_path, Path("removed_folder", "obsolete.txt"))
     assert_file_equals(client_path, original_source_path, "changed.txt")
     assert_file_equals(client_path, original_source_path, "unchanged.txt")
