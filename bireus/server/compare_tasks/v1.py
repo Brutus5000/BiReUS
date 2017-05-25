@@ -5,8 +5,8 @@ import tempfile
 import zipfile
 
 import bsdiff4
-from bireus.server import get_subdirectory_names, get_filenames
 
+from bireus.server import get_subdirectory_names, get_filenames
 from bireus.server.compare_tasks.base import CompareTask
 from bireus.shared import *
 from bireus.shared.diff_head import DiffHead
@@ -137,11 +137,8 @@ class CompareTaskV1(CompareTask):
                 temp_targetpath.mkdir(parents=True, exist_ok=True)
                 temp_deltapath.mkdir(parents=True, exist_ok=True)
 
-                with zipfile.ZipFile(str(basepath)) as baseZip:
-                    baseZip.extractall(str(temp_basepath))
-
-                with zipfile.ZipFile(str(targetpath)) as targetZip:
-                    targetZip.extractall(str(temp_targetpath))
+                unpack_archive(basepath, temp_basepath, "zip")
+                unpack_archive(targetpath, temp_targetpath, "zip")
 
                 logger.debug("zipdelta required for `%s`", file_path)
                 zip_diff = CompareTaskV1(temp_abspath, self.name, self.base, self.target,
