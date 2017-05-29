@@ -2,7 +2,7 @@
 
 [![Build status](https://travis-ci.org/Brutus5000/BiReUS.svg?branch=master)](https://travis-ci.org/Brutus5000/BiReUS) [![Coveralls Status](https://img.shields.io/coveralls/Brutus5000/BiReUS/master.svg)](https://coveralls.io/github/Brutus5000/BiReUS)
 
-**Important note:** BiReUS is not stable yet. File format compatibility may break during development.
+**Important note:** BiReUS is feature complete regarding the basic functionality. However, it has not been used in a productive environment yet. File format compatibility may break, if any production critical error is found, but should remain stable otherwise.
 
 
 BiReUS is a tool to create and apply binary patches for application data (versions forward and _optional_ backward) based on the bsdiff algorithm.
@@ -21,6 +21,8 @@ It aims to support the following use case:
 *	The software (client) handles the updates of the plugins using delta-files generated on the server.
 
 BiReUS will only create and apply patches for you. It is intended to be run as a shell script or to be embedded inside other applications.
+
+For more information visit the [wiki](https://github.com/Brutus5000/BiReUS/wiki)!
 
 ## Example
 If you want to try it out, you can generate a demo repository using `python3 tests/create_test_server_data.py`.
