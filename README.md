@@ -46,7 +46,7 @@ Run it with `run-server.py`
 
 ### Server (HTTP)
 The server component starts an http server that takes update requests, pulls them in a queue and processes them in order.
-It listens on the given port on ``<host>:<port>/update` for POST-calls. The request body needs to be JSON containing the following arguments: `repository` (name of the repository), `callback_url` (which is invoked after patching) and `payload` which is posted to the callback url.
+It listens on the given port on `<host>:<port>/update` for POST-calls. The request body needs to be JSON containing the following arguments: `repository` (name of the repository), `callback_url` (which is invoked after patching) and `payload` which is posted to the callback url.
 
 Run it with `web-server.py`
 
